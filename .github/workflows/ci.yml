@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    # La validación de entorno (src/lib/env.ts) corre también en typegen y lint.
+    env:
+      DATABASE_URL: postgres://reservas:reservas@localhost:5432/reservas_test
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: reservas
+          POSTGRES_PASSWORD: reservas
+          POSTGRES_DB: reservas_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U reservas -d reservas_test"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
