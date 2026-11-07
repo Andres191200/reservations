@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Next Boilerplate",
-  description: "Next.js + TypeScript + Zod + Sass",
+  title: "Reservas",
+  description: "Sistema de reservas multitenant",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
