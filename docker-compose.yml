@@ -1,0 +1,28 @@
+# Servicios de desarrollo local. La app corre fuera de Docker con `npm run dev`.
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: reservas
+      POSTGRES_PASSWORD: reservas
+      POSTGRES_DB: reservas
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Crea también la base `reservas_test` que usan los tests.
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reservas -d reservas"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Interfaz web: http://localhost:8025
+
+volumes:
+  postgres-data:
