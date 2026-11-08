@@ -8,6 +8,13 @@
       "when": 1794075908480,
       "tag": "0000_crear-negocios",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794157081321,
+      "tag": "0001_crear-administradores-y-sesiones",
+      "breakpoints": true
     }
   ]
 }

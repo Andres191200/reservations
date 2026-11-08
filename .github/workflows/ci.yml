@@ -12,6 +12,8 @@ jobs:
     # La validación de entorno (src/lib/env.ts) corre también en typegen y lint.
     env:
       DATABASE_URL: postgres://reservas:reservas@localhost:5432/reservas_test
+      BETTER_AUTH_SECRET: secreto-de-ci-no-usar-en-produccion-0123456789
+      BETTER_AUTH_URL: http://localhost:3000
 
     services:
       postgres:

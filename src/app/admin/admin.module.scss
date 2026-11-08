@@ -1,0 +1,100 @@
+@use "abstracts" as *;
+
+.centrado {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: $space * 2;
+}
+
+.tarjeta {
+  @include card;
+  display: grid;
+  gap: $space * 2;
+  width: 100%;
+  max-width: 380px;
+  padding: $space * 3;
+
+  h1 {
+    font-size: 1.5rem;
+  }
+}
+
+.formulario {
+  display: grid;
+  gap: $space * 2;
+}
+
+.campo {
+  display: grid;
+  gap: $space * 0.5;
+
+  input {
+    padding: $space * 1.25 $space * 1.5;
+    border: 1px solid $color-border;
+    border-radius: $radius;
+    background: $color-bg;
+    color: $color-text;
+    font: inherit;
+  }
+}
+
+.boton {
+  padding: $space * 1.25 $space * 2;
+  border: 0;
+  border-radius: $radius;
+  background: $color-primary;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+}
+
+.botonSecundario {
+  padding: $space * 0.75 $space * 1.5;
+  border: 1px solid $color-border;
+  border-radius: $radius;
+  background: transparent;
+  color: $color-text;
+  font: inherit;
+  cursor: pointer;
+}
+
+.error {
+  color: $color-danger;
+}
+
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space * 2;
+  padding: $space * 2;
+  border-bottom: 1px solid $color-border;
+
+  @include up(md) {
+    padding: $space * 2 $space * 4;
+  }
+}
+
+.nombreNegocio {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.contenido {
+  padding: $space * 3 $space * 2;
+
+  @include up(md) {
+    padding: $space * 4;
+  }
+}
+
+.apagado {
+  color: $color-muted;
+}
