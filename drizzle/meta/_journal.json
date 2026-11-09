@@ -5,8 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1794075908480,
-      "tag": "0000_crear-negocios",
+      "when": 1794247683996,
+      "tag": "0000_initial-schema",
       "breakpoints": true
     }
   ]

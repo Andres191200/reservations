@@ -1,8 +1,8 @@
 # Reservas
 
-Plataforma multitenant donde cada Negocio recibe Reservas de sus Clientes. El vocabulario del dominio está en [GLOSSARY.md](GLOSSARY.md) y las decisiones de arquitectura en [docs/adr/](docs/adr/).
+Plataforma multitenant donde cada Negocio recibe Reservas de sus Clientes. El vocabulario del dominio está en [GLOSSARY.md](GLOSSARY.md) y las decisiones de arquitectura en [docs/adr/](docs/adr/). El código y la base de datos están en inglés, usando el nombre en inglés de cada término del glosario; los textos que ven los usuarios, en castellano ([ADR 0002](docs/adr/0002-codigo-en-ingles-con-glosario-bilingue.md)).
 
-Stack: Next.js 16 · React 19 · TypeScript · SCSS modules · zod · PostgreSQL · Drizzle · Vitest.
+Stack: Next.js 16 · React 19 · TypeScript · SCSS modules · zod · PostgreSQL · Drizzle · Better Auth · Vitest.
 
 ## Requisitos
 
@@ -21,6 +21,7 @@ npm run db:migrate             # crea las tablas en la base de desarrollo
 npm run dev                    # http://localhost:3000
 ```
 
+- Para entrar al panel (http://localhost:3000/admin) primero creá un Negocio (ver [Comandos del operador](#comandos-del-operador)).
 - Mailpit: los emails que mande la app se ven en http://localhost:8025.
 - Para apagar los servicios: `docker compose down` (los datos quedan guardados). Para borrar también los datos: `docker compose down -v`.
 
@@ -47,9 +48,30 @@ npm test               # corre todos los tests una vez
 npm run test:watch     # vuelve a correr al guardar
 ```
 
-[src/db/negocios.test.ts](src/db/negocios.test.ts) es el test modelo: llama a la misma función que usa la app y verifica el resultado observable.
+[src/db/businesses.test.ts](src/db/businesses.test.ts) es el test modelo: llama a la misma función que usa la app y verifica el resultado observable. También tiene los tests de aislamiento entre Negocios.
 
 > La base `reservas_test` se crea la primera vez que se levanta el volumen de Postgres. Si ya tenías el volumen de antes, recrealo con `docker compose down -v && docker compose up -d`.
+
+## Comandos del operador
+
+Los Negocios no se registran solos: los da de alta el operador de la plataforma desde la terminal. Usan la base de `DATABASE_URL`.
+
+```bash
+# Crea el Negocio y su Administrador, y muestra la contraseña inicial (una sola vez).
+npm run business:register -- --name "Barbería Don Pepe" --path don-pepe --email admin@donpepe.com
+
+# Genera una contraseña nueva para el Administrador y cierra sus sesiones abiertas.
+npm run admin:reset-password -- --email admin@donpepe.com
+```
+
+El path es la URL de la página pública (`app.com/don-pepe`): solo minúsculas, números y guiones, y no puede ser una palabra reservada (`admin`, `api`, `reserva`, `reservas`; la lista está en [src/core/path.ts](src/core/path.ts)) ni un path ya usado.
+
+## Panel y multitenancy
+
+- El login del Administrador es con Better Auth ([src/lib/auth.ts](src/lib/auth.ts)): email y contraseña, sesiones guardadas en la tabla `sessions` y una cookie httpOnly. El registro público está desactivado.
+- En el panel, el Negocio sale **solo** de la sesión, con `getSessionBusiness()` ([src/app/admin/session.ts](src/app/admin/session.ts)). Toda página y server action del panel la llama; sin sesión válida, redirige al login. Nunca se toma el Negocio de la URL ni de un formulario.
+- [src/proxy.ts](src/proxy.ts) manda al login cualquier ruta de `/admin` sin cookie de sesión (es un chequeo rápido; la validación real es la de arriba).
+- Las funciones de la capa de datos ([src/db/](src/db/)) que leen o escriben datos de un Negocio reciben `businessId: BusinessId` como parámetro obligatorio.
 
 ## Otros comandos
 

@@ -1,7 +1,7 @@
 import nextEnv from "@next/env";
 import { defineConfig } from "vitest/config";
 
-// Vitest corre con NODE_ENV=test, así que esto carga `.env.test` (y nunca `.env.local`).
+// Vitest runs with NODE_ENV=test, so this loads `.env.test` (and never `.env.local`).
 nextEnv.loadEnvConfig(process.cwd());
 
 export default defineConfig({
@@ -9,12 +9,12 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
-    // Aplica las migraciones a la base de tests una vez antes de correr.
-    globalSetup: ["./src/test/aplicar-migraciones.ts"],
-    // Vacía la base antes de cada test.
-    setupFiles: ["./src/test/base-limpia.ts"],
-    // Todos los archivos comparten la misma base: correrlos de a uno evita que
-    // un archivo vacíe la base mientras otro la está usando.
+    // Applies the migrations to the test database once before running.
+    globalSetup: ["./src/test/apply-migrations.ts"],
+    // Empties the database before each test.
+    setupFiles: ["./src/test/clean-database.ts"],
+    // All files share the same database: running them one at a time keeps one file
+    // from emptying the database while another is using it.
     fileParallelism: false,
   },
 });
