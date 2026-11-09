@@ -9,10 +9,10 @@ jobs:
   checks:
     runs-on: ubuntu-latest
 
-    # La validación de entorno (src/lib/env.ts) corre también en typegen y lint.
+    # Environment validation (src/lib/env.ts) also runs during typegen and lint.
     env:
       DATABASE_URL: postgres://reservas:reservas@localhost:5432/reservas_test
-      BETTER_AUTH_SECRET: secreto-de-ci-no-usar-en-produccion-0123456789
+      BETTER_AUTH_SECRET: ci-secret-do-not-use-in-production-0123456789
       BETTER_AUTH_URL: http://localhost:3000
 
     services:

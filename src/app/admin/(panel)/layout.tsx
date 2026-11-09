@@ -1,28 +1,28 @@
 import { Suspense } from "react";
-import { cerrarSesion } from "../acciones";
+import { signOut } from "../actions";
 import styles from "../admin.module.scss";
-import { obtenerNegocioDeLaSesion } from "../sesion";
+import { getSessionBusiness } from "../session";
 
-/** Marco de todas las páginas del panel: nombre del Negocio y botón para cerrar sesión. */
-export default function LayoutPanel({ children }: LayoutProps<"/admin">) {
+/** Frame of every panel page: the Business name and the sign-out button. */
+export default function PanelLayout({ children }: LayoutProps<"/admin">) {
   return (
     <>
-      <header className={styles.barra}>
-        <Suspense fallback={<span className={styles.apagado}>Cargando…</span>}>
-          <NombreDelNegocio />
+      <header className={styles.topBar}>
+        <Suspense fallback={<span className={styles.muted}>Cargando…</span>}>
+          <BusinessName />
         </Suspense>
-        <form action={cerrarSesion}>
-          <button type="submit" className={styles.botonSecundario}>
+        <form action={signOut}>
+          <button type="submit" className={styles.secondaryButton}>
             Cerrar sesión
           </button>
         </form>
       </header>
-      <main className={styles.contenido}>{children}</main>
+      <main className={styles.content}>{children}</main>
     </>
   );
 }
 
-async function NombreDelNegocio() {
-  const negocio = await obtenerNegocioDeLaSesion();
-  return <span className={styles.nombreNegocio}>{negocio.nombre}</span>;
+async function BusinessName() {
+  const business = await getSessionBusiness();
+  return <span className={styles.businessName}>{business.name}</span>;
 }

@@ -1,33 +1,34 @@
-// Esquema de la base. Cada cambio acá se convierte en migración con `npm run db:generate`.
+// Database schema. Every change here becomes a migration with `npm run db:generate`.
+// Names follow the English terms in GLOSSARY.md (see ADR 0002).
 import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 /**
- * Id de un Negocio. Es un string, pero con su propio tipo: así el compilador no deja
- * pasar por error el id de otra cosa (una Reserva, un Profesional) donde va un Negocio.
+ * Id of a Business. It is a string, but with its own type: the compiler rejects passing
+ * the id of something else (a Reservation, a Professional) where a Business is expected.
  */
-export type NegocioId = string & { readonly __negocioId: unique symbol };
+export type BusinessId = string & { readonly __businessId: unique symbol };
 
-/** Negocio: la unidad de aislamiento de datos (el tenant). */
-export const negocios = pgTable("negocios", {
-  id: uuid().$type<NegocioId>().primaryKey().defaultRandom(),
-  nombre: text().notNull(),
-  /** Segmento de la URL de su página pública: app.com/<path>. */
+/** Business: the unit of data isolation (the tenant). */
+export const businesses = pgTable("businesses", {
+  id: uuid().$type<BusinessId>().primaryKey().defaultRandom(),
+  name: text().notNull(),
+  /** URL segment of its public page: app.com/<path>. */
   path: text().notNull().unique(),
-  creadoEn: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
-// --- Tablas de Better Auth ---------------------------------------------------------
-// Las columnas usan los nombres que espera Better Auth (name, createdAt, ...); solo
-// las tablas tienen nombre en castellano (ver `modelName` en src/lib/auth.ts).
+// --- Better Auth tables -------------------------------------------------------------
+// Columns use the names Better Auth expects. The tables are renamed through
+// `modelName` in src/lib/auth.ts.
 
-/** Administrador: la cuenta de acceso al panel. Cada Negocio tiene exactamente uno. */
-export const administradores = pgTable("administradores", {
+/** Admin: the login to the panel. Each Business has exactly one. */
+export const admins = pgTable("admins", {
   id: uuid().primaryKey().defaultRandom(),
-  negocioId: uuid()
-    .$type<NegocioId>()
+  businessId: uuid()
+    .$type<BusinessId>()
     .notNull()
     .unique()
-    .references(() => negocios.id, { onDelete: "cascade" }),
+    .references(() => businesses.id, { onDelete: "cascade" }),
   name: text().notNull(),
   email: text().notNull().unique(),
   emailVerified: boolean().notNull().default(false),
@@ -36,12 +37,12 @@ export const administradores = pgTable("administradores", {
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
-/** Sesión iniciada de un Administrador. El token viaja en una cookie httpOnly. */
-export const sesiones = pgTable("sesiones", {
+/** A signed-in Admin session. The token travels in an httpOnly cookie. */
+export const sessions = pgTable("sessions", {
   id: uuid().primaryKey().defaultRandom(),
   userId: uuid()
     .notNull()
-    .references(() => administradores.id, { onDelete: "cascade" }),
+    .references(() => admins.id, { onDelete: "cascade" }),
   token: text().notNull().unique(),
   expiresAt: timestamp({ withTimezone: true }).notNull(),
   ipAddress: text(),
@@ -50,12 +51,12 @@ export const sesiones = pgTable("sesiones", {
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
-/** Credencial de un Administrador. Con email y contraseña, guarda el hash en `password`. */
-export const cuentas = pgTable("cuentas", {
+/** An Admin's credential. With email and password, the hash is stored in `password`. */
+export const accounts = pgTable("accounts", {
   id: uuid().primaryKey().defaultRandom(),
   userId: uuid()
     .notNull()
-    .references(() => administradores.id, { onDelete: "cascade" }),
+    .references(() => admins.id, { onDelete: "cascade" }),
   accountId: text().notNull(),
   providerId: text().notNull(),
   password: text(),
@@ -69,8 +70,8 @@ export const cuentas = pgTable("cuentas", {
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
-/** Tokens de verificación de Better Auth (no se usan en el MVP, pero los exige). */
-export const verificaciones = pgTable("verificaciones", {
+/** Better Auth verification tokens (unused in the MVP, but required by Better Auth). */
+export const verifications = pgTable("verifications", {
   id: uuid().primaryKey().defaultRandom(),
   identifier: text().notNull(),
   value: text().notNull(),

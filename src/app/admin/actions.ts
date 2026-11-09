@@ -5,25 +5,25 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
-import { RUTA_LOGIN } from "./sesion";
+import { LOGIN_ROUTE } from "./session";
 
-export type EstadoLogin = { error?: string; email?: string };
+export type SignInState = { error?: string; email?: string };
 
-const loginSchema = z.object({
+const signInSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email("Ingresá un email válido.")),
-  contrasena: z.string().min(1, "Ingresá tu contraseña."),
+  password: z.string().min(1, "Ingresá tu contraseña."),
 });
 
-export async function iniciarSesion(_anterior: EstadoLogin, formData: FormData): Promise<EstadoLogin> {
+export async function signIn(_previous: SignInState, formData: FormData): Promise<SignInState> {
   const email = String(formData.get("email") ?? "");
-  const parseo = loginSchema.safeParse({ email, contrasena: formData.get("contrasena") ?? "" });
-  if (!parseo.success) {
-    return { error: parseo.error.issues[0].message, email };
+  const parsed = signInSchema.safeParse({ email, password: formData.get("password") ?? "" });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message, email };
   }
 
   try {
     await auth.api.signInEmail({
-      body: { email: parseo.data.email, password: parseo.data.contrasena },
+      body: { email: parsed.data.email, password: parsed.data.password },
       headers: await headers(),
     });
   } catch (error) {
@@ -35,7 +35,7 @@ export async function iniciarSesion(_anterior: EstadoLogin, formData: FormData):
   redirect("/admin");
 }
 
-export async function cerrarSesion(): Promise<void> {
+export async function signOut(): Promise<void> {
   await auth.api.signOut({ headers: await headers() });
-  redirect(RUTA_LOGIN);
+  redirect(LOGIN_ROUTE);
 }

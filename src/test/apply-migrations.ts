@@ -1,8 +1,8 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 
-/** Global setup de Vitest: deja la base de tests con el esquema al día. */
-export default async function aplicarMigraciones() {
+/** Vitest global setup: brings the test database schema up to date. */
+export default async function applyMigrations() {
   const db = drizzle(process.env.DATABASE_URL!);
   try {
     await migrate(db, { migrationsFolder: "drizzle" });

@@ -1,24 +1,24 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import styles from "../admin.module.scss";
-import { obtenerNegocioDeLaSesion } from "../sesion";
+import { getSessionBusiness } from "../session";
 
 export const metadata: Metadata = { title: "Panel · Reservas" };
 
-export default function PaginaPanel() {
+export default function PanelPage() {
   return (
-    <Suspense fallback={<p className={styles.apagado}>Cargando…</p>}>
-      <Bienvenida />
+    <Suspense fallback={<p className={styles.muted}>Cargando…</p>}>
+      <Welcome />
     </Suspense>
   );
 }
 
-async function Bienvenida() {
-  const negocio = await obtenerNegocioDeLaSesion();
+async function Welcome() {
+  const business = await getSessionBusiness();
   return (
     <>
-      <h1>Panel de {negocio.nombre}</h1>
-      <p className={styles.apagado}>Página pública: /{negocio.path}</p>
+      <h1>Panel de {business.name}</h1>
+      <p className={styles.muted}>Página pública: /{business.path}</p>
     </>
   );
 }

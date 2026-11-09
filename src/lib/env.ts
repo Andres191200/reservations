@@ -1,10 +1,11 @@
 import { z } from "zod";
 
 /**
- * Validación de variables de entorno con Zod.
- * Se importa en next.config.ts para fallar rápido en dev/build.
- * Las variables públicas deben empezar por NEXT_PUBLIC_.
- * Contiene variables de servidor: no importar desde componentes de cliente.
+ * Environment variable validation with Zod.
+ * Imported from next.config.ts to fail fast in dev/build.
+ * Public variables must start with NEXT_PUBLIC_.
+ * Holds server variables: do not import from client components.
+ * Error messages are in Spanish: they are read by the developer running the app.
  */
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),

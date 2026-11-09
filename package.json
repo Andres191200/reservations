@@ -12,8 +12,8 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "negocio:alta": "tsx src/comandos/alta-negocio.ts",
-    "administrador:resetear-contrasena": "tsx src/comandos/resetear-contrasena.ts"
+    "business:register": "tsx src/commands/register-business.ts",
+    "admin:reset-password": "tsx src/commands/reset-admin-password.ts"
   },
   "dependencies": {
     "@next/env": "^16.4.5",

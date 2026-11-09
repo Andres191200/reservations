@@ -1,13 +1,13 @@
 @use "abstracts" as *;
 
-.centrado {
+.centered {
   display: grid;
   place-items: center;
   min-height: 100dvh;
   padding: $space * 2;
 }
 
-.tarjeta {
+.card {
   @include card;
   display: grid;
   gap: $space * 2;
@@ -20,12 +20,12 @@
   }
 }
 
-.formulario {
+.form {
   display: grid;
   gap: $space * 2;
 }
 
-.campo {
+.field {
   display: grid;
   gap: $space * 0.5;
 
@@ -39,7 +39,7 @@
   }
 }
 
-.boton {
+.button {
   padding: $space * 1.25 $space * 2;
   border: 0;
   border-radius: $radius;
@@ -55,7 +55,7 @@
   }
 }
 
-.botonSecundario {
+.secondaryButton {
   padding: $space * 0.75 $space * 1.5;
   border: 1px solid $color-border;
   border-radius: $radius;
@@ -69,7 +69,7 @@
   color: $color-danger;
 }
 
-.barra {
+.topBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -82,12 +82,12 @@
   }
 }
 
-.nombreNegocio {
+.businessName {
   font-size: 1.125rem;
   font-weight: 600;
 }
 
-.contenido {
+.content {
   padding: $space * 3 $space * 2;
 
   @include up(md) {
@@ -95,6 +95,6 @@
   }
 }
 
-.apagado {
+.muted {
   color: $color-muted;
 }

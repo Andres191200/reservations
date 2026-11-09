@@ -1,7 +1,7 @@
 import { loadEnvConfig } from "@next/env";
 import { defineConfig } from "drizzle-kit";
 
-// Carga `.env*` igual que Next.js (con NODE_ENV=test usa `.env.test`).
+// Loads `.env*` the same way Next.js does (with NODE_ENV=test it uses `.env.test`).
 loadEnvConfig(process.cwd());
 
 const databaseUrl = process.env.DATABASE_URL;
