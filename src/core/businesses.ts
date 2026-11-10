@@ -4,9 +4,7 @@ import { z } from "zod";
 import { changeAdminPassword, findAdminByEmail } from "@/db/admins";
 import { createBusinessWithAdmin, findBusinessByPath, type Business } from "@/db/businesses";
 import { validatePath } from "./path";
-
-/** Outcome of an operation. `error` is shown to the operator, so it is in Spanish. */
-export type Result<T> = { ok: true; value: T } | { ok: false; error: string };
+import type { Result } from "./result";
 
 const registrationSchema = z.object({
   name: z.string().trim().min(1, "El nombre del Negocio no puede estar vacío."),

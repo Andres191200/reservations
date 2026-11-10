@@ -1,6 +1,18 @@
 // Database schema. Every change here becomes a migration with `npm run db:generate`.
 // Names follow the English terms in GLOSSARY.md (see ADR 0002).
-import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import {
+  boolean,
+  check,
+  integer,
+  pgTable,
+  primaryKey,
+  smallint,
+  text,
+  time,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 /**
  * Id of a Business. It is a string, but with its own type: the compiler rejects passing
@@ -14,8 +26,39 @@ export const businesses = pgTable("businesses", {
   name: text().notNull(),
   /** URL segment of its public page: app.com/<path>. */
   path: text().notNull().unique(),
+  /**
+   * Reservation duration. A single value for now; issue #18 turns it into a value
+   * with the date it takes effect from.
+   */
+  reservationDurationMinutes: integer().notNull().default(30),
+  minimumNoticeHours: integer().notNull().default(1),
+  maximumNoticeDays: integer().notNull().default(30),
+  cancellationDeadlineHours: integer().notNull().default(2),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * Opening hours: one row per weekday the Business is open. A day without a row is closed.
+ * Times are wall-clock times in Argentina (see src/core/time-zone.ts), not UTC.
+ */
+export const openingHours = pgTable(
+  "opening_hours",
+  {
+    businessId: uuid()
+      .$type<BusinessId>()
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    /** ISO weekday: 1 = Monday ... 7 = Sunday. */
+    weekday: smallint().notNull(),
+    opensAt: time().notNull(),
+    closesAt: time().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.businessId, table.weekday] }),
+    check("opening_hours_weekday_range", sql`${table.weekday} BETWEEN 1 AND 7`),
+    check("opening_hours_closes_after_opens", sql`${table.closesAt} > ${table.opensAt}`),
+  ],
+);
 
 // --- Better Auth tables -------------------------------------------------------------
 // Columns use the names Better Auth expects. The tables are renamed through
