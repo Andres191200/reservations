@@ -98,3 +98,120 @@
 .muted {
   color: $color-muted;
 }
+
+.success {
+  color: $color-success;
+}
+
+.hint {
+  color: $color-muted;
+  font-size: 0.875rem;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space * 2;
+
+  a {
+    color: $color-text;
+    text-decoration: none;
+
+    &:hover {
+      color: $color-primary;
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+}
+
+.topBarStart {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space * 3;
+}
+
+.sections {
+  display: grid;
+  gap: $space * 3;
+  max-width: 720px;
+  margin-top: $space * 3;
+}
+
+.section {
+  @include card;
+  display: grid;
+  gap: $space * 2;
+  padding: $space * 2;
+
+  @include up(md) {
+    padding: $space * 3;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  .form {
+    max-width: 480px;
+  }
+}
+
+// Opening hours: one row per weekday.
+.week {
+  display: grid;
+  gap: $space;
+}
+
+.day {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: $space $space * 2;
+  margin: 0;
+  padding: $space * 1.5 0;
+  border: 0;
+  border-bottom: 1px solid $color-border;
+
+  @include up(sm) {
+    grid-template-columns: 110px auto 1fr;
+  }
+
+  // A closed day keeps its times (they are ignored), but they are hidden.
+  &:has(.closedToggle input:checked) .dayTimes {
+    visibility: hidden;
+  }
+}
+
+.dayName {
+  float: left; // Lets the legend sit in the grid like any other child.
+  padding: 0;
+  font-weight: 600;
+}
+
+.closedToggle {
+  display: flex;
+  align-items: center;
+  gap: $space;
+  cursor: pointer;
+
+  input {
+    width: 18px;
+    height: 18px;
+    accent-color: $color-primary;
+  }
+}
+
+.dayTimes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-column: 1 / -1;
+  gap: $space * 2;
+
+  @include up(sm) {
+    grid-column: auto;
+  }
+}

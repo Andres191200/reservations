@@ -27,12 +27,28 @@ _Avoid_: Usuario, customer (en castellano), paciente / Client, User, Patient
 ### Tiempo
 
 **Horario de atención** · _en_: **Opening hours**:
-Franja continua en la que el Negocio atiende cada día de la semana (o ninguna, si ese día cierra), común a todos sus Profesionales.
+Franja continua en la que el Negocio atiende cada día de la semana (o ninguna, si ese día cierra), común a todos sus Profesionales. Las horas son siempre hora de Argentina.
 _Avoid_: Horario del profesional, disponibilidad / Schedule, Availability
 
 **Duración de Reserva** · _en_: **Reservation duration**:
 Tiempo que ocupa cada Reserva, único por Negocio. Divide el Horario de atención en bloques consecutivos desde la apertura.
 _Avoid_: Duración del turno, slot / Slot length, Appointment length
+
+**Antelación mínima** · _en_: **Minimum notice**:
+Tiempo mínimo, en horas, que tiene que faltar para el inicio de un bloque para poder reservarlo. Por defecto, 1 hora.
+_Avoid_: Anticipación, margen, preaviso / Lead time, Buffer
+
+**Antelación máxima** · _en_: **Maximum notice**:
+Cantidad de días hacia adelante, contando desde hoy, en los que se puede reservar. Por defecto, 30 días.
+_Avoid_: Horizonte, ventana de reserva / Booking window, Horizon
+
+**Límite de cancelación** · _en_: **Cancellation deadline**:
+Tiempo mínimo, en horas, que tiene que faltar para el inicio de una Reserva para que el Cliente pueda cancelarla por su cuenta. Pasado ese límite, solo la puede cancelar el Negocio. Por defecto, 2 horas.
+_Avoid_: Plazo de cancelación, política de cancelación / Cancellation window, Cancellation policy
+
+**Reglas de Reserva** · _en_: **Reservation rules**:
+Configuración de un Negocio que define cómo se puede reservar: la Duración de Reserva, la Antelación mínima, la Antelación máxima y el Límite de cancelación.
+_Avoid_: Políticas, configuración de turnos / Policies, Booking settings
 
 **Cierre** · _en_: **Closure**:
 Día puntual en que el Negocio no atiende aunque su Horario de atención diga lo contrario (por ejemplo, un feriado).
