@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { WEEKDAYS } from "@/core/weekdays";
 import styles from "../../admin.module.scss";
+import { FormFeedback } from "../../form-feedback";
 import { saveOpeningHours, type DayFields, type OpeningHoursState } from "./actions";
 
 /** Week of Opening hours: for each day, a range from opening to closing, or closed. */
@@ -53,22 +54,4 @@ export function OpeningHoursForm({ initialDays }: { initialDays: DayFields[] }) 
       </button>
     </form>
   );
-}
-
-export function FormFeedback({ error, saved }: { error?: string; saved?: boolean }) {
-  if (error) {
-    return (
-      <p role="alert" className={styles.error}>
-        {error}
-      </p>
-    );
-  }
-  if (saved) {
-    return (
-      <p role="status" className={styles.success}>
-        Cambios guardados.
-      </p>
-    );
-  }
-  return null;
 }

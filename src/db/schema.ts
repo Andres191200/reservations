@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  index,
   integer,
   pgTable,
   primaryKey,
@@ -57,6 +58,32 @@ export const openingHours = pgTable(
     primaryKey({ columns: [table.businessId, table.weekday] }),
     check("opening_hours_weekday_range", sql`${table.weekday} BETWEEN 1 AND 7`),
     check("opening_hours_closes_after_opens", sql`${table.closesAt} > ${table.opensAt}`),
+  ],
+);
+
+/** Id of a Professional, with its own type for the same reason as `BusinessId`. */
+export type ProfessionalId = string & { readonly __professionalId: unique symbol };
+
+/**
+ * Professional: a person of the Business who serves the Customers. It is never deleted:
+ * a Deactivation sets `deactivatedAt`, so the history of Reservations it served is kept.
+ */
+export const professionals = pgTable(
+  "professionals",
+  {
+    id: uuid().$type<ProfessionalId>().primaryKey().defaultRandom(),
+    businessId: uuid()
+      .$type<BusinessId>()
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    name: text().notNull(),
+    /** When it was deactivated. Null while it is active. */
+    deactivatedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("professionals_business_id_idx").on(table.businessId),
+    check("professionals_name_not_blank", sql`btrim(${table.name}) <> ''`),
   ],
 );
 
