@@ -7,7 +7,7 @@ import {
   type ReservationRulesFields,
   type ReservationRulesState,
 } from "./actions";
-import { FormFeedback } from "./opening-hours-form";
+import { FormFeedback } from "../../form-feedback";
 
 const FIELDS: { name: keyof ReservationRulesFields; label: string; hint: string; min: number }[] = [
   {

@@ -20,6 +20,10 @@ _Avoid_: Admin (en castellano), dueño, usuario, operador / Owner, User, Operato
 Persona del Negocio, identificada por su nombre, que atiende a los Clientes. Cada Reserva queda asignada a uno.
 _Avoid_: Empleado, staff, prestador, barbero / Employee, Staff, Provider
 
+**Baja** · _en_: **Deactivation**:
+Retiro de un Profesional del Negocio. Desde la Baja deja de recibir Reservas, pero no se borra, para que se conserve el historial de Reservas que atendió. Un Profesional sin Baja está _activo_ (_active_). La palabra se usa solo para Profesionales; con las Reservas se habla de Cancelación.
+_Avoid_: Eliminación, borrado, desactivación / Delete, Removal, Archive
+
 **Cliente** · _en_: **Customer**:
 Persona que reserva en un Negocio. No tiene cuenta en la plataforma; se identifica por los datos de contacto que deja al reservar.
 _Avoid_: Usuario, customer (en castellano), paciente / Client, User, Patient

@@ -215,3 +215,100 @@
     grid-column: auto;
   }
 }
+
+// Rows of a list with an action at the end (e.g. the Professionals).
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.listRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space * 2;
+  padding: $space * 1.5 0;
+  border-bottom: 1px solid $color-border;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.dangerButton {
+  padding: $space * 0.75 $space * 1.5;
+  border: 0;
+  border-radius: $radius;
+  background: $color-danger;
+  color: $color-bg;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+}
+
+.secondaryButton,
+.dangerButton {
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+// Modal (see modal.tsx). The <dialog> has no padding: a click on it is a click on the backdrop.
+.modal {
+  @include card;
+  width: calc(100% - #{$space * 4});
+  max-width: 440px;
+  margin: auto; // The global reset zeroes it, and the browser centers <dialog> with it.
+  padding: 0;
+  color: $color-text;
+
+  &::backdrop {
+    background: rgb(0 0 0 / 60%);
+  }
+
+  &[open] {
+    animation: modal-in 160ms ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &[open] {
+      animation: none;
+    }
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+.modalBody {
+  display: grid;
+  gap: $space * 2;
+  padding: $space * 3;
+}
+
+.modalTitle {
+  font-size: 1.25rem;
+}
+
+.modalActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: $space;
+
+  .error {
+    flex-basis: 100%;
+  }
+}
