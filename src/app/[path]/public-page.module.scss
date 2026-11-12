@@ -1,0 +1,126 @@
+@use "abstracts" as *;
+
+// Mobile first: one column with side margins; wider screens only center it.
+
+.page {
+  display: grid;
+  align-content: start;
+  gap: $space * 3;
+  width: 100%;
+  max-width: 560px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: $space * 3 $space * 2;
+
+  @include up(md) {
+    padding-top: $space * 8;
+  }
+}
+
+.header {
+  display: grid;
+  gap: $space * 0.5;
+
+  h1 {
+    font-size: clamp(1.5rem, 6vw, 2.25rem);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+}
+
+.card {
+  @include card;
+  display: grid;
+  gap: $space * 2.5;
+  padding: $space * 2;
+
+  @include up(sm) {
+    padding: $space * 3;
+  }
+}
+
+.muted {
+  color: $color-muted;
+}
+
+.notice {
+  color: $color-muted;
+  padding: $space * 2;
+  border: 1px dashed $color-border;
+  border-radius: $radius;
+  text-align: center;
+}
+
+.dayPicker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: $space * 1.5;
+}
+
+.field {
+  display: grid;
+  flex: 1 1 180px;
+  gap: $space * 0.5;
+
+  input {
+    min-height: 44px;
+    padding: $space $space * 1.5;
+    border: 1px solid $color-border;
+    border-radius: $radius;
+    background: $color-bg;
+    color: $color-text;
+    font: inherit;
+    // 16px or more keeps iOS from zooming into the field.
+    font-size: max(1rem, 16px);
+  }
+}
+
+.secondaryButton {
+  min-height: 44px;
+  padding: $space $space * 2;
+  border: 1px solid $color-border;
+  border-radius: $radius;
+  background: transparent;
+  color: $color-text;
+  font: inherit;
+  cursor: pointer;
+}
+
+.dayNav {
+  display: flex;
+  justify-content: space-between;
+  gap: $space * 2;
+
+  a {
+    padding: $space 0;
+    text-decoration: none;
+  }
+}
+
+.slots {
+  display: grid;
+  gap: $space * 1.5;
+
+  h2 {
+    font-size: 1.125rem;
+  }
+}
+
+.slotList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: $space;
+  list-style: none;
+
+  li {
+    display: grid;
+    place-items: center;
+    min-height: 44px;
+    border: 1px solid $color-border;
+    border-radius: $radius;
+    background: $color-bg;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+}
