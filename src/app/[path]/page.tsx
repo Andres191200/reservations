@@ -4,20 +4,11 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getAvailableSlots, getReservableDays } from "@/core/available-slots";
 import { getReservationRules } from "@/core/business-configuration";
-import {
-  addDays,
-  instantInTimeZone,
-  isCalendarDay,
-  TIME_ZONE,
-  TIME_ZONE_LABEL,
-  type CalendarDay,
-} from "@/core/time-zone";
+import { addDays, isCalendarDay, TIME_ZONE_LABEL, type CalendarDay } from "@/core/time-zone";
 import { findBusinessByPath } from "@/db/businesses";
 import { DayPicker } from "./day-picker";
+import { capitalize, DAY_PARAM, dayHref, formatDay, reserveHref } from "./format";
 import styles from "./public-page.module.scss";
-
-/** Query parameter with the chosen day: app.com/<path>?dia=2026-11-12. */
-const DAY_PARAM = "dia";
 
 export async function generateMetadata({ params }: PageProps<"/[path]">): Promise<Metadata> {
   const business = await findBusinessByPath((await params).path);
@@ -53,7 +44,7 @@ async function BusinessAvailability({ params, searchParams }: PageProps<"/[path]
     <>
       <header className={styles.header}>
         <h1>{business.name}</h1>
-        <p className={styles.muted}>Elegí un día para ver los Horarios disponibles.</p>
+        <p className={styles.muted}>Elegí un día y un Horario disponible para reservar.</p>
       </header>
 
       <section className={styles.card}>
@@ -78,7 +69,7 @@ async function BusinessAvailability({ params, searchParams }: PageProps<"/[path]
               )}
             </nav>
             <Suspense key={day} fallback={<p className={styles.muted}>Cargando…</p>}>
-              <AvailableSlots businessId={business.id} day={day} now={now} />
+              <AvailableSlots businessId={business.id} path={path} day={day} now={now} />
             </Suspense>
           </>
         ) : (
@@ -94,10 +85,12 @@ async function BusinessAvailability({ params, searchParams }: PageProps<"/[path]
 
 async function AvailableSlots({
   businessId,
+  path,
   day,
   now,
 }: {
   businessId: Parameters<typeof getAvailableSlots>[0];
+  path: string;
   day: CalendarDay;
   now: Date;
 }) {
@@ -113,7 +106,12 @@ async function AvailableSlots({
           <ul className={styles.slotList}>
             {slots.map((slot) => (
               <li key={slot.startsAt.toISOString()}>
-                <time dateTime={slot.startsAt.toISOString()}>{slot.time}</time>
+                <Link
+                  href={reserveHref(path, slot.startsAt)}
+                  aria-label={`Reservar a las ${slot.time}`}
+                >
+                  <time dateTime={slot.startsAt.toISOString()}>{slot.time}</time>
+                </Link>
               </li>
             ))}
           </ul>
@@ -122,24 +120,4 @@ async function AvailableSlots({
       )}
     </div>
   );
-}
-
-function dayHref(path: string, day: CalendarDay): string {
-  return `/${path}?${DAY_PARAM}=${day}`;
-}
-
-const dayFormat = new Intl.DateTimeFormat("es-AR", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  timeZone: TIME_ZONE,
-});
-
-/** "miércoles 11 de noviembre". */
-function formatDay(day: CalendarDay): string {
-  return dayFormat.format(instantInTimeZone(day, "12:00")).replace(",", "");
-}
-
-function capitalize(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
 }

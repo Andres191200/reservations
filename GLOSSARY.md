@@ -91,3 +91,7 @@ _Avoid_: Status (en castellano) / State
 **Cancelación** · _en_: **Cancellation**:
 Paso de una Reserva a Cancelada, hecho por el Cliente o por el Negocio. Una Reserva cancelada no se reactiva ni se modifica; cambiar el horario es cancelar y crear una Reserva nueva.
 _Avoid_: Baja, anulación, reprogramación / Void, Reschedule
+
+**Link de cancelación** · _en_: **Cancellation link**:
+Link personal con el que el Cliente ve y cancela su Reserva sin tener cuenta. Lleva un token aleatorio y no adivinable (_cancellation token_), propio de cada Reserva.
+_Avoid_: Link mágico, código de reserva / Magic link, Booking code
