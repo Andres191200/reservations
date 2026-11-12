@@ -1,58 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { getAvailableSlots, getReservableDays } from "./available-slots";
-import {
-  saveOpeningHours,
-  saveReservationRules,
-  type OpenDay,
-  type ReservationRulesInput,
-} from "./business-configuration";
 import { registerBusiness } from "./businesses";
 import { addProfessional, deactivateProfessional } from "./professionals";
+import { reserve } from "./reservations";
+import {
+  setUpBusiness,
+  theDayBefore,
+  THURSDAY,
+  WEDNESDAY,
+} from "@/test/set-up-business";
 
 // Runs against the real Postgres (`reservas_test` database), emptied before each test.
 // The clock (`now`) is always simulated. Argentina is UTC-3: 09:00 there is 12:00 UTC.
-// 2026-11-11 is a Wednesday (weekday 3); 2026-11-12, a Thursday (weekday 4).
-
-const WEDNESDAY = "2026-11-11";
-const THURSDAY = "2026-11-12";
-
-const defaultRules: ReservationRulesInput = {
-  reservationDurationMinutes: 60,
-  minimumNoticeHours: 0,
-  maximumNoticeDays: 30,
-  cancellationDeadlineHours: 2,
-};
 
 /** A Business open on Wednesdays from 09:00 to 12:00, with one Professional. */
-async function setUp(
-  options: {
-    openDays?: OpenDay[];
-    rules?: Partial<ReservationRulesInput>;
-    professionals?: number;
-  } = {},
-) {
-  const registration = await registerBusiness({
-    name: "Barbería Don Pepe",
-    path: "don-pepe",
-    adminEmail: "admin@donpepe.com",
-  });
-  if (!registration.ok) throw new Error(registration.error);
-  const businessId = registration.value.business.id;
-
-  const openDays = options.openDays ?? [{ weekday: 3, opensAt: "09:00", closesAt: "12:00" }];
-  if (!(await saveOpeningHours(businessId, openDays)).ok) throw new Error("Opening hours");
-  const rules = await saveReservationRules(businessId, { ...defaultRules, ...options.rules });
-  if (!rules.ok) throw new Error(rules.error);
-  for (let i = 0; i < (options.professionals ?? 1); i++) {
-    await addProfessional(businessId, { name: `Profesional ${i + 1}` });
-  }
-  return businessId;
+async function setUp(options: Parameters<typeof setUpBusiness>[0] = {}) {
+  return (await setUpBusiness(options)).businessId;
 }
 
 const times = (slots: { time: string }[]) => slots.map((slot) => slot.time);
-
-/** The day before, at noon in Argentina: far from any notice. */
-const theDayBefore = new Date("2026-11-10T15:00:00Z");
 
 describe("Available slots", () => {
   it("divides the Opening hours into consecutive blocks from the opening", async () => {
@@ -212,6 +178,56 @@ describe("Around midnight in Argentina", () => {
     expect(await getAvailableSlots(businessId, WEDNESDAY, theDayBefore)).toEqual([
       { time: "21:00", startsAt: new Date("2026-11-12T00:00:00Z") },
       { time: "22:00", startsAt: new Date("2026-11-12T01:00:00Z") },
+    ]);
+  });
+});
+
+describe("Confirmed Reservations", () => {
+  const at0900 = new Date("2026-11-11T12:00:00Z");
+
+  async function reserveAt(businessId: Awaited<ReturnType<typeof setUp>>, startsAt: Date) {
+    const result = await reserve(
+      businessId,
+      { startsAt: startsAt.toISOString(), customerName: "Ana", customerEmail: "ana@mail.com" },
+      theDayBefore,
+    );
+    if (!result.ok) throw new Error(result.error);
+  }
+
+  it("a block stays available while one active Professional is free in it", async () => {
+    const businessId = await setUp({ professionals: 2 });
+
+    await reserveAt(businessId, at0900);
+
+    expect(times(await getAvailableSlots(businessId, WEDNESDAY, theDayBefore))).toEqual([
+      "09:00",
+      "10:00",
+      "11:00",
+    ]);
+  });
+
+  it("a block stops being available when every active Professional has a Reservation", async () => {
+    const businessId = await setUp({ professionals: 2 });
+
+    await reserveAt(businessId, at0900);
+    await reserveAt(businessId, at0900);
+
+    expect(times(await getAvailableSlots(businessId, WEDNESDAY, theDayBefore))).toEqual([
+      "10:00",
+      "11:00",
+    ]);
+  });
+
+  it("a Reservation of another Business does not take up the block", async () => {
+    const businessId = await setUp();
+    const other = await setUp({ path: "otro" });
+
+    await reserveAt(other, at0900);
+
+    expect(times(await getAvailableSlots(businessId, WEDNESDAY, theDayBefore))).toEqual([
+      "09:00",
+      "10:00",
+      "11:00",
     ]);
   });
 });

@@ -113,14 +113,44 @@
   gap: $space;
   list-style: none;
 
-  li {
+  a {
     display: grid;
     place-items: center;
     min-height: 44px;
     border: 1px solid $color-border;
     border-radius: $radius;
     background: $color-bg;
+    color: $color-text;
     font-variant-numeric: tabular-nums;
     font-weight: 600;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      border-color: $color-primary;
+      color: $color-primary;
+    }
   }
+}
+
+.primaryButton {
+  min-height: 44px;
+  padding: $space $space * 2;
+  border: 0;
+  border-radius: $radius;
+  background: $color-primary;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.error {
+  color: $color-danger;
+  white-space: pre-line;
 }

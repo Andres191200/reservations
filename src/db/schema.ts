@@ -6,6 +6,7 @@ import {
   check,
   index,
   integer,
+  pgEnum,
   pgTable,
   primaryKey,
   smallint,
@@ -84,6 +85,54 @@ export const professionals = pgTable(
   (table) => [
     index("professionals_business_id_idx").on(table.businessId),
     check("professionals_name_not_blank", sql`btrim(${table.name}) <> ''`),
+  ],
+);
+
+/** Id of a Reservation, with its own type for the same reason as `BusinessId`. */
+export type ReservationId = string & { readonly __reservationId: unique symbol };
+
+/**
+ * Reservation status. An enum and not a boolean, so more statuses can be added later.
+ * A Reservation is born Confirmed.
+ */
+export const reservationStatus = pgEnum("reservation_status", ["confirmed", "cancelled"]);
+
+export type ReservationStatus = (typeof reservationStatus.enumValues)[number];
+
+/**
+ * Reservation: a Customer's commitment to be served by a Professional at a given time.
+ * The Customer has no account: their contact data is stored on the Reservation itself.
+ *
+ * Two Confirmed Reservations of the same Professional cannot overlap. Drizzle cannot
+ * express that exclusion constraint (`reservations_no_overlap`), so it lives in the
+ * migration drizzle/0003_reservations.sql.
+ */
+export const reservations = pgTable(
+  "reservations",
+  {
+    id: uuid().$type<ReservationId>().primaryKey().defaultRandom(),
+    businessId: uuid()
+      .$type<BusinessId>()
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    professionalId: uuid()
+      .$type<ProfessionalId>()
+      .notNull()
+      .references(() => professionals.id),
+    /** When it starts and ends, as instants (UTC). The range is [startsAt, endsAt). */
+    startsAt: timestamp({ withTimezone: true }).notNull(),
+    endsAt: timestamp({ withTimezone: true }).notNull(),
+    status: reservationStatus().notNull().default("confirmed"),
+    customerName: text().notNull(),
+    customerEmail: text().notNull(),
+    customerPhone: text(),
+    /** Random, unguessable secret of the Customer's cancellation link. */
+    cancellationToken: text().notNull().unique(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("reservations_business_id_starts_at_idx").on(table.businessId, table.startsAt),
+    check("reservations_ends_after_starts", sql`${table.endsAt} > ${table.startsAt}`),
   ],
 );
 

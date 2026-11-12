@@ -1,7 +1,8 @@
 import type { OpenDay, ReservationRules } from "@/db/business-configuration";
+import { listBusyTimes, type BusyTime } from "@/db/reservations";
 import type { BusinessId } from "@/db/schema";
 import { getOpeningHours, getReservationRules } from "./business-configuration";
-import { getActiveProfessionals } from "./professionals";
+import { getActiveProfessionals, type Professional } from "./professionals";
 import {
   addDays,
   dayInTimeZone,
@@ -23,7 +24,8 @@ export type AvailableSlot = {
 /** The days a Customer can choose: from today to the Maximum notice, both included. */
 export type ReservableDays = { first: CalendarDay; last: CalendarDay };
 
-const HOUR_MS = 60 * 60 * 1000;
+const MINUTE_MS = 60 * 1000;
+const HOUR_MS = 60 * MINUTE_MS;
 
 /**
  * Today and the following `maximumNoticeDays` days, in Argentina. `now` is the clock,
@@ -39,39 +41,65 @@ export function getReservableDays(
 
 /**
  * The Available slots of the Business on `day` (Argentina), computed at the moment from
- * the clock `now`. Closures, Absences and Reservations are not subtracted yet.
- * A day outside the Reservable days, or not a valid day, has none.
+ * the clock `now`: the blocks the Reservation rules allow reserving in which at least one
+ * active Professional has no Confirmed Reservation. Closures and Absences are not
+ * subtracted yet. A day outside the Reservable days, or not a valid day, has none.
  */
 export async function getAvailableSlots(
   businessId: BusinessId,
   day: string,
   now: Date,
 ): Promise<AvailableSlot[]> {
-  const [openingHours, rules, professionals] = await Promise.all([
+  const { blocks } = await getDayAvailability(businessId, day, now);
+  return blocks
+    .filter((block) => block.freeProfessionals.length > 0)
+    .map(({ startsAt, time }) => ({ startsAt, time }));
+}
+
+/**
+ * A block of the Opening hours that the Reservation rules allow reserving, with the
+ * active Professionals that have no Confirmed Reservation overlapping it.
+ * When `freeProfessionals` is empty, the block is full: it is not an Available slot.
+ */
+export type Block = AvailableSlot & { endsAt: Date; freeProfessionals: Professional[] };
+
+/**
+ * Every block of `day` the Reservation rules allow reserving, full or not, plus the
+ * Confirmed Reservations of that day. Used by the Available slots and by the creation
+ * of a Reservation, so both decide with the same rules.
+ */
+export async function getDayAvailability(
+  businessId: BusinessId,
+  day: string,
+  now: Date,
+): Promise<{ blocks: Block[]; busyTimes: BusyTime[] }> {
+  if (!isCalendarDay(day)) return { blocks: [], busyTimes: [] };
+
+  const [openingHours, rules, professionals, busyTimes] = await Promise.all([
     getOpeningHours(businessId),
     getReservationRules(businessId),
     getActiveProfessionals(businessId),
+    listBusyTimes(
+      businessId,
+      instantInTimeZone(day, "00:00"),
+      instantInTimeZone(addDays(day, 1), "00:00"),
+    ),
   ]);
-  return computeAvailableSlots({
-    day,
-    now,
-    openingHours,
-    rules,
-    activeProfessionals: professionals.length,
-  });
+  const blocks = computeBlocks({ day, now, openingHours, rules, professionals, busyTimes });
+  return { blocks, busyTimes };
 }
 
 /** The calculation itself, without reading the database. */
-function computeAvailableSlots(input: {
-  day: string;
+function computeBlocks(input: {
+  day: CalendarDay;
   now: Date;
   openingHours: OpenDay[];
   rules: ReservationRules;
-  activeProfessionals: number;
-}): AvailableSlot[] {
-  const { day, now, openingHours, rules, activeProfessionals } = input;
+  professionals: Professional[];
+  busyTimes: BusyTime[];
+}): Block[] {
+  const { day, now, openingHours, rules, professionals, busyTimes } = input;
 
-  if (!isCalendarDay(day)) return [];
   const { first, last } = getReservableDays(rules, now);
   if (day < first || day > last) return [];
 
@@ -79,14 +107,30 @@ function computeAvailableSlots(input: {
   if (!openDay) return [];
 
   // Each block accepts as many Reservations as free Professionals (ADR 0001).
-  if (activeProfessionals === 0) return [];
+  if (professionals.length === 0) return [];
 
   const earliestStart = now.getTime() + rules.minimumNoticeHours * HOUR_MS;
+  const durationMs = rules.reservationDurationMinutes * MINUTE_MS;
 
   return blockStarts(openDay, rules.reservationDurationMinutes)
     .map((time) => instantInTimeZone(day, time))
     .filter((startsAt) => startsAt.getTime() >= earliestStart)
-    .map((startsAt) => ({ startsAt, time: timeInTimeZone(startsAt) }));
+    .map((startsAt) => {
+      const endsAt = new Date(startsAt.getTime() + durationMs);
+      const isBusy = (professional: Professional) =>
+        busyTimes.some(
+          (busy) =>
+            busy.professionalId === professional.id &&
+            busy.startsAt < endsAt &&
+            busy.endsAt > startsAt,
+        );
+      return {
+        startsAt,
+        endsAt,
+        time: timeInTimeZone(startsAt),
+        freeProfessionals: professionals.filter((professional) => !isBusy(professional)),
+      };
+    });
 }
 
 /**
