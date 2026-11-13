@@ -89,11 +89,15 @@ Situación de una Reserva: _Confirmada_ (_Confirmed_, vigente) o _Cancelada_ (_C
 _Avoid_: Status (en castellano) / State
 
 **Cancelación** · _en_: **Cancellation**:
-Paso de una Reserva a Cancelada, hecho por el Cliente o por el Negocio. Una Reserva cancelada no se reactiva ni se modifica; cambiar el horario es cancelar y crear una Reserva nueva.
+Paso de una Reserva a Cancelada, hecho por el Cliente o por el Negocio; se registra quién la hizo y cuándo. Al cancelarse, su horario vuelve a ser Horario disponible. Una Reserva cancelada no se reactiva ni se modifica; cambiar el horario es cancelar y crear una Reserva nueva.
 _Avoid_: Baja, anulación, reprogramación / Void, Reschedule
 
 **Email de confirmación** · _en_: **Confirmation email**:
 Email que recibe el Cliente cuando se crea su Reserva, con el Negocio, el día, el horario y el Link de cancelación. Si no se puede enviar, la Reserva queda creada igual.
+_Avoid_: Comprobante, notificación, aviso / Receipt, Notification
+
+**Email de cancelación** · _en_: **Cancellation email**:
+Email que recibe el Cliente cuando cancela su Reserva, con el Negocio, el día, el horario y un link a la página pública para reservar otro. Si no se puede enviar, la Cancelación queda hecha igual.
 _Avoid_: Comprobante, notificación, aviso / Receipt, Notification
 
 **Link de cancelación** · _en_: **Cancellation link**:

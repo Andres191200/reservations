@@ -6,6 +6,7 @@ import { reservations, type BusinessId } from "@/db/schema";
 import { fakeEmailSender } from "@/test/fake-email-sender";
 import { setUpBusiness, theDayBefore, WEDNESDAY } from "@/test/set-up-business";
 import { getAvailableSlots } from "./available-slots";
+import { cancelByCustomer } from "./cancellations";
 import { addProfessional, deactivateProfessional } from "./professionals";
 import {
   reserve,
@@ -311,10 +312,7 @@ describe("Exclusion constraint", () => {
     const { businessId } = await setUpBusiness();
     const first = await reserveAt(businessId, AT_0900);
     if (!first.ok) throw new Error(first.error);
-    await db
-      .update(reservations)
-      .set({ status: "cancelled" })
-      .where(eq(reservations.id, first.value.id));
+    await cancelByCustomer(businessId, first.value.cancellationToken, theDayBefore, fakeEmailSender());
 
     const again = await reserveAt(businessId, AT_0900);
 

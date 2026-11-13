@@ -3,6 +3,7 @@ import { db } from "./index";
 import {
   reservations,
   type BusinessId,
+  type CancelledBy,
   type ProfessionalId,
   type ReservationId,
   type ReservationStatus,
@@ -30,6 +31,69 @@ export type StoredReservation = {
   status: ReservationStatus;
   cancellationToken: string;
 };
+
+/** A Reservation as the Customer sees it through their Cancellation link. */
+export type CustomerReservation = StoredReservation & {
+  customerName: string;
+  customerEmail: string;
+  cancelledBy: CancelledBy | null;
+};
+
+const customerReservationColumns = {
+  id: reservations.id,
+  professionalId: reservations.professionalId,
+  startsAt: reservations.startsAt,
+  endsAt: reservations.endsAt,
+  status: reservations.status,
+  cancellationToken: reservations.cancellationToken,
+  customerName: reservations.customerName,
+  customerEmail: reservations.customerEmail,
+  cancelledBy: reservations.cancelledBy,
+};
+
+/**
+ * The Reservation with that cancellation token, only if it belongs to the Business: a
+ * token used under another Business's path finds nothing.
+ */
+export async function findReservationByToken(
+  businessId: BusinessId,
+  cancellationToken: string,
+): Promise<CustomerReservation | undefined> {
+  const [reservation] = await db
+    .select(customerReservationColumns)
+    .from(reservations)
+    .where(
+      and(
+        eq(reservations.businessId, businessId),
+        eq(reservations.cancellationToken, cancellationToken),
+      ),
+    );
+  return reservation;
+}
+
+/**
+ * Cancellation: turns a Confirmed Reservation of the Business into Cancelled, recording
+ * who made it and when. Returns `undefined` when there was nothing to cancel because it
+ * was already Cancelled: of two simultaneous Cancellations, only one goes through.
+ */
+export async function cancelReservation(
+  businessId: BusinessId,
+  reservationId: ReservationId,
+  cancellation: { cancelledBy: CancelledBy; cancelledAt: Date },
+): Promise<CustomerReservation | undefined> {
+  const [cancelled] = await db
+    .update(reservations)
+    .set({ status: "cancelled", ...cancellation })
+    .where(
+      and(
+        eq(reservations.businessId, businessId),
+        eq(reservations.id, reservationId),
+        eq(reservations.status, "confirmed"),
+      ),
+    )
+    .returning(customerReservationColumns);
+  return cancelled;
+}
 
 /** Name of the exclusion constraint of drizzle/0003_reservations.sql. */
 const NO_OVERLAP_CONSTRAINT = "reservations_no_overlap";

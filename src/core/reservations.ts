@@ -4,7 +4,7 @@ import { getBusiness } from "@/db/businesses";
 import { insertReservation, type BusyTime, type StoredReservation } from "@/db/reservations";
 import type { BusinessId } from "@/db/schema";
 import { getDayAvailability } from "./available-slots";
-import type { EmailSender } from "./email";
+import { sendWithoutFailing, type EmailSender } from "./email";
 import type { Professional } from "./professionals";
 import { confirmationEmail, type ConfirmedReservationDetails } from "./reservation-emails";
 import type { Result } from "./result";
@@ -118,7 +118,7 @@ export function byAssignmentPreference(
 
 /**
  * Sends the confirmation email without ever failing the Reservation: it is already
- * Confirmed, so a provider problem is only logged (there are no retries).
+ * Confirmed, so a provider problem is only logged.
  */
 async function sendConfirmationEmail(
   emailSender: EmailSender,
@@ -126,24 +126,21 @@ async function sendConfirmationEmail(
   reservation: Reservation,
   customer: Pick<ConfirmedReservationDetails, "customerName" | "customerEmail">,
 ): Promise<void> {
-  try {
-    const business = await getBusiness(businessId);
-    if (!business) throw new Error("No se encontró el Negocio de la Reserva");
-    await emailSender.send(
-      confirmationEmail({
+  // The Customer's email stays out of the logs; the Reservation id is enough to find it.
+  await sendWithoutFailing(
+    emailSender,
+    async () => {
+      const business = await getBusiness(businessId);
+      if (!business) throw new Error("No se encontró el Negocio de la Reserva");
+      return confirmationEmail({
         business,
         ...customer,
         startsAt: reservation.startsAt,
         cancellationToken: reservation.cancellationToken,
-      }),
-    );
-  } catch (error) {
-    // The Customer's email stays out of the logs; the Reservation id is enough to find it.
-    console.error(
-      `No se pudo enviar el email de confirmación de la Reserva ${reservation.id}:`,
-      error,
-    );
-  }
+      });
+    },
+    `No se pudo enviar el email de confirmación de la Reserva ${reservation.id}:`,
+  );
 }
 
 /** 32 random bytes in base64url: unguessable, and safe to put in a link. */

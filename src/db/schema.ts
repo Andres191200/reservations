@@ -99,6 +99,11 @@ export const reservationStatus = pgEnum("reservation_status", ["confirmed", "can
 
 export type ReservationStatus = (typeof reservationStatus.enumValues)[number];
 
+/** Who made the Cancellation of a Reservation: the Customer or the Business. */
+export const cancelledBy = pgEnum("cancelled_by", ["customer", "business"]);
+
+export type CancelledBy = (typeof cancelledBy.enumValues)[number];
+
 /**
  * Reservation: a Customer's commitment to be served by a Professional at a given time.
  * The Customer has no account: their contact data is stored on the Reservation itself.
@@ -128,11 +133,18 @@ export const reservations = pgTable(
     customerPhone: text(),
     /** Random, unguessable secret of the Customer's cancellation link. */
     cancellationToken: text().notNull().unique(),
+    /** Cancellation: who made it and when. Both are set exactly when it is Cancelled. */
+    cancelledBy: cancelledBy(),
+    cancelledAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("reservations_business_id_starts_at_idx").on(table.businessId, table.startsAt),
     check("reservations_ends_after_starts", sql`${table.endsAt} > ${table.startsAt}`),
+    check(
+      "reservations_cancellation_recorded",
+      sql`(${table.status} = 'cancelled') = (${table.cancelledBy} IS NOT NULL AND ${table.cancelledAt} IS NOT NULL)`,
+    ),
   ],
 );
 

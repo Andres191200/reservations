@@ -154,3 +154,76 @@
   color: $color-danger;
   white-space: pre-line;
 }
+
+// Page of the Cancellation link (reserva/[token]).
+
+.details {
+  display: grid;
+  gap: $space * 1.5;
+
+  div {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: $space;
+  }
+
+  dt {
+    color: $color-muted;
+  }
+
+  dd {
+    font-weight: 600;
+    text-align: right;
+  }
+}
+
+.confirmed,
+.cancelled {
+  padding: $space * 0.25 $space;
+  border-radius: $radius;
+  font-size: 0.875rem;
+}
+
+.confirmed {
+  background: rgba($color-success, 0.15);
+  color: $color-success;
+}
+
+.cancelled {
+  background: rgba($color-danger, 0.15);
+  color: $color-danger;
+}
+
+.cancellation,
+.confirmation {
+  display: grid;
+  gap: $space * 1.5;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space;
+
+  button {
+    flex: 1 1 140px;
+  }
+}
+
+.dangerButton {
+  min-height: 44px;
+  padding: $space $space * 2;
+  border: 0;
+  border-radius: $radius;
+  background: $color-danger;
+  color: $color-bg;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+}
