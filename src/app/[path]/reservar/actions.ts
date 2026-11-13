@@ -1,9 +1,10 @@
 "use server";
 
+import { capitalize, formatDay } from "@/core/format";
 import { reserve, SLOT_TAKEN_ERROR } from "@/core/reservations";
 import { dayInTimeZone, timeInTimeZone } from "@/core/time-zone";
 import { findBusinessByPath } from "@/db/businesses";
-import { capitalize, formatDay } from "../format";
+import { emailSender } from "@/lib/email-sender";
 
 /** What the Customer typed, so it comes back after a rejection. */
 export type CustomerFields = { name: string; email: string; phone: string };
@@ -45,6 +46,7 @@ export async function reserveSlot(
       customerPhone: fields.phone,
     },
     new Date(),
+    emailSender,
   );
   if (!result.ok) {
     return { error: result.error, slotTaken: result.error === SLOT_TAKEN_ERROR, fields };

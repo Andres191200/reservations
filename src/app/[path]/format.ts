@@ -1,20 +1,4 @@
-import { instantInTimeZone, TIME_ZONE, type CalendarDay } from "@/core/time-zone";
-
-const dayFormat = new Intl.DateTimeFormat("es-AR", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  timeZone: TIME_ZONE,
-});
-
-/** "miércoles 11 de noviembre". */
-export function formatDay(day: CalendarDay): string {
-  return dayFormat.format(instantInTimeZone(day, "12:00")).replace(",", "");
-}
-
-export function capitalize(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
+import type { CalendarDay } from "@/core/time-zone";
 
 /** Query parameter with the chosen day: app.com/<path>?dia=2026-11-12. */
 export const DAY_PARAM = "dia";

@@ -1,8 +1,9 @@
 import { eq } from "drizzle-orm";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { insertReservation } from "@/db/reservations";
 import { reservations, type BusinessId } from "@/db/schema";
+import { fakeEmailSender } from "@/test/fake-email-sender";
 import { setUpBusiness, theDayBefore, WEDNESDAY } from "@/test/set-up-business";
 import { getAvailableSlots } from "./available-slots";
 import { addProfessional, deactivateProfessional } from "./professionals";
@@ -14,7 +15,7 @@ import {
 } from "./reservations";
 
 // Runs against the real Postgres (`reservas_test` database), emptied before each test.
-// The clock (`now`) is always simulated. The Business is open on Wednesdays from 09:00 to
+// The clock (`now`) and the EmailSender are always simulated. The Business is open on Wednesdays from 09:00 to
 // 12:00 (Argentina), with 60-minute Reservations. Argentina is UTC-3.
 
 const AT_0900 = "2026-11-11T12:00:00.000Z";
@@ -27,8 +28,9 @@ function reserveAt(
   startsAt: string,
   overrides: Partial<NewReservation> = {},
   now = theDayBefore,
+  emailSender = fakeEmailSender(),
 ) {
-  return reserve(businessId, { startsAt, ...customer, ...overrides }, now);
+  return reserve(businessId, { startsAt, ...customer, ...overrides }, now, emailSender);
 }
 
 async function confirmedReservations(businessId: BusinessId) {
@@ -96,6 +98,73 @@ describe("Reserving an Available slot", () => {
 
     const slots = await getAvailableSlots(businessId, WEDNESDAY, theDayBefore);
     expect(slots.map((slot) => slot.time)).toEqual(["10:00", "11:00"]);
+  });
+});
+
+describe("Confirmation email", () => {
+  it("sends the Customer the Business, day, time and Cancellation link", async () => {
+    const { businessId } = await setUpBusiness();
+    const emails = fakeEmailSender();
+
+    const result = await reserveAt(businessId, AT_0900, {}, theDayBefore, emails);
+
+    if (!result.ok) throw new Error(result.error);
+    const link = `http://localhost:3000/don-pepe/reserva/${result.value.cancellationToken}`;
+    expect(emails.sent).toHaveLength(1);
+    const [email] = emails.sent;
+    expect(email).toMatchObject({
+      to: "ana@mail.com",
+      fromName: "Negocio don-pepe",
+      subject: "Reserva confirmada en Negocio don-pepe: Miércoles 11 de noviembre, 09:00",
+    });
+    expect(email.text).toContain("Tu Reserva en Negocio don-pepe quedó confirmada.");
+    expect(email.text).toContain("Día: Miércoles 11 de noviembre");
+    expect(email.text).toContain("Horario: 09:00 (hora de Argentina)");
+    expect(email.text).toContain(link);
+    expect(email.html).toContain(`href="${link}"`);
+  });
+
+  it("escapes the names typed by people in the HTML", async () => {
+    const { businessId } = await setUpBusiness();
+    const emails = fakeEmailSender();
+
+    await reserveAt(businessId, AT_0900, { customerName: "<b>Ana</b>" }, theDayBefore, emails);
+
+    expect(emails.sent[0].html).toContain("Hola, &lt;b&gt;Ana&lt;/b&gt;:");
+    expect(emails.sent[0].text).toContain("Hola, <b>Ana</b>:");
+  });
+
+  it("is not sent when the Reservation is not created", async () => {
+    const { businessId } = await setUpBusiness();
+    const emails = fakeEmailSender();
+
+    await reserveAt(businessId, AT_0900, { customerName: "" }, theDayBefore, emails);
+    await reserveAt(businessId, "2026-11-11T11:00:00.000Z", {}, theDayBefore, emails);
+
+    expect(emails.sent).toEqual([]);
+  });
+
+  it("if sending fails, the Reservation is created anyway and the error is logged", async () => {
+    const { businessId } = await setUpBusiness();
+    const logError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await reserveAt(
+      businessId,
+      AT_0900,
+      {},
+      theDayBefore,
+      fakeEmailSender({ failing: true }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const [stored] = await confirmedReservations(businessId);
+    expect(stored).toMatchObject({ id: result.value.id, status: "confirmed" });
+    expect(logError).toHaveBeenCalledWith(
+      `No se pudo enviar el email de confirmación de la Reserva ${result.value.id}:`,
+      expect.objectContaining({ message: "Fallo simulado del proveedor de email" }),
+    );
+    logError.mockRestore();
   });
 });
 
