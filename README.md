@@ -29,12 +29,12 @@ Las variables de entorno se validan al arrancar en [src/lib/env.ts](src/lib/env.
 
 ## Emails
 
-La app manda el email de confirmación de cada Reserva, con el Link de cancelación. Quién lo envía lo decide `EMAIL_TRANSPORT`:
+La app manda el email de confirmación de cada Reserva, con el Link de cancelación (`app.com/<path>/reserva/<token>`), y el email de cancelación cuando el Cliente la cancela desde ese link. Quién lo envía lo decide `EMAIL_TRANSPORT`:
 
 - `mailpit` (por defecto, desarrollo): los emails no salen de tu máquina; se ven en Mailpit.
 - `resend` (producción): se envían por [Resend](https://resend.com). Exige `RESEND_API_KEY` y `EMAIL_FROM`, una dirección de un dominio verificado en Resend.
 
-El link de los emails se arma con `BETTER_AUTH_URL`, la URL base de la app. Si un envío falla, la Reserva queda creada igual y el error se registra en los logs (sin reintentos).
+El link de los emails se arma con `BETTER_AUTH_URL`, la URL base de la app. Si un envío falla, la Reserva (o la Cancelación) queda hecha igual y el error se registra en los logs (sin reintentos).
 
 El núcleo no sabe de Resend ni de Mailpit: recibe el envío de emails desde afuera (`EmailSender`, en [src/core/email.ts](src/core/email.ts)), igual que el reloj. La app le pasa el real ([src/lib/email-sender.ts](src/lib/email-sender.ts)) y los tests un falso ([src/test/fake-email-sender.ts](src/test/fake-email-sender.ts)) que registra lo que se habría mandado y puede simular un fallo.
 

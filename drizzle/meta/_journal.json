@@ -29,6 +29,13 @@
       "when": 1794505689722,
       "tag": "0003_reservations",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794589586097,
+      "tag": "0004_customer-cancellation",
+      "breakpoints": true
     }
   ]
 }

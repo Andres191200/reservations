@@ -13,6 +13,11 @@ export function cancellationLink(path: string, cancellationToken: string): strin
     .href;
 }
 
+/** The public page of the Business, absolute, to reserve another time from an email. */
+export function publicPageLink(path: string): string {
+  return new URL(`/${path}`, env.BETTER_AUTH_URL).href;
+}
+
 export type ConfirmedReservationDetails = {
   business: { name: string; path: string };
   customerName: string;
@@ -24,8 +29,7 @@ export type ConfirmedReservationDetails = {
 /** The email the Customer receives when their Reservation is Confirmed. */
 export function confirmationEmail(details: ConfirmedReservationDetails): Email {
   const { business, customerName, startsAt } = details;
-  const day = capitalize(formatDay(dayInTimeZone(startsAt)));
-  const time = `${timeInTimeZone(startsAt)} (${TIME_ZONE_LABEL})`;
+  const { day, time } = whenText(startsAt);
   const link = cancellationLink(business.path, details.cancellationToken);
 
   const text = [
@@ -59,6 +63,61 @@ export function confirmationEmail(details: ConfirmedReservationDetails): Email {
     subject: `Reserva confirmada en ${business.name}: ${day}, ${timeInTimeZone(startsAt)}`,
     text,
     html,
+  };
+}
+
+export type CancelledReservationDetails = {
+  business: { name: string; path: string };
+  customerName: string;
+  customerEmail: string;
+  startsAt: Date;
+};
+
+/** The email the Customer receives when they cancel their Reservation. */
+export function cancellationEmail(details: CancelledReservationDetails): Email {
+  const { business, customerName, startsAt } = details;
+  const { day, time } = whenText(startsAt);
+  const link = publicPageLink(business.path);
+
+  const text = [
+    `Hola, ${customerName}:`,
+    "",
+    `Tu Reserva en ${business.name} quedó cancelada.`,
+    "",
+    `Día: ${day}`,
+    `Horario: ${time}`,
+    "",
+    "Si querés, podés reservar otro horario desde este link:",
+    link,
+  ].join("\n");
+
+  const html = `<!doctype html>
+<html lang="es">
+  <body style="font-family: sans-serif; color: #1a1a1a; line-height: 1.5">
+    <p>Hola, ${escapeHtml(customerName)}:</p>
+    <p>Tu Reserva en <strong>${escapeHtml(business.name)}</strong> quedó cancelada.</p>
+    <p>
+      <strong>Día:</strong> ${escapeHtml(day)}<br />
+      <strong>Horario:</strong> ${escapeHtml(time)}
+    </p>
+    <p>Si querés, <a href="${escapeHtml(link)}">podés reservar otro horario desde este link</a>.</p>
+  </body>
+</html>`;
+
+  return {
+    to: details.customerEmail,
+    fromName: business.name,
+    subject: `Reserva cancelada en ${business.name}: ${day}, ${timeInTimeZone(startsAt)}`,
+    text,
+    html,
+  };
+}
+
+/** Day and time of a Reservation as the emails write them, in Argentina time. */
+function whenText(startsAt: Date): { day: string; time: string } {
+  return {
+    day: capitalize(formatDay(dayInTimeZone(startsAt))),
+    time: `${timeInTimeZone(startsAt)} (${TIME_ZONE_LABEL})`,
   };
 }
 
