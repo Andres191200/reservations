@@ -8,6 +8,7 @@ import {
   type ReservationRules,
 } from "@/db/business-configuration";
 import type { BusinessId } from "@/db/schema";
+import { capitalize } from "./format";
 import type { Result } from "./result";
 import { weekdayName } from "./weekdays";
 
@@ -119,8 +120,4 @@ export async function saveReservationRules(
 
 function errorMessage(error: z.ZodError): string {
   return error.issues.map((issue) => issue.message).join("\n");
-}
-
-function capitalize(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
 }

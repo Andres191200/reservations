@@ -3,6 +3,7 @@ import { getAvailableSlots, getReservableDays } from "./available-slots";
 import { registerBusiness } from "./businesses";
 import { addProfessional, deactivateProfessional } from "./professionals";
 import { reserve } from "./reservations";
+import { fakeEmailSender } from "@/test/fake-email-sender";
 import {
   setUpBusiness,
   theDayBefore,
@@ -190,6 +191,7 @@ describe("Confirmed Reservations", () => {
       businessId,
       { startsAt: startsAt.toISOString(), customerName: "Ana", customerEmail: "ana@mail.com" },
       theDayBefore,
+      fakeEmailSender(),
     );
     if (!result.ok) throw new Error(result.error);
   }

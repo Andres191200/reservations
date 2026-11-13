@@ -4,10 +4,11 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getAvailableSlots, getReservableDays } from "@/core/available-slots";
 import { getReservationRules } from "@/core/business-configuration";
+import { capitalize, formatDay } from "@/core/format";
 import { addDays, isCalendarDay, TIME_ZONE_LABEL, type CalendarDay } from "@/core/time-zone";
 import { findBusinessByPath } from "@/db/businesses";
 import { DayPicker } from "./day-picker";
-import { capitalize, DAY_PARAM, dayHref, formatDay, reserveHref } from "./format";
+import { DAY_PARAM, dayHref, reserveHref } from "./format";
 import styles from "./public-page.module.scss";
 
 export async function generateMetadata({ params }: PageProps<"/[path]">): Promise<Metadata> {

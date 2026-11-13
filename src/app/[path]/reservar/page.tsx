@@ -3,9 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getAvailableSlots } from "@/core/available-slots";
+import { capitalize, formatDay } from "@/core/format";
 import { dayInTimeZone, TIME_ZONE_LABEL } from "@/core/time-zone";
 import { findBusinessByPath } from "@/db/businesses";
-import { capitalize, dayHref, formatDay, SLOT_PARAM } from "../format";
+import { dayHref, SLOT_PARAM } from "../format";
 import styles from "../public-page.module.scss";
 import { ReservationForm } from "./reservation-form";
 

@@ -1,9 +1,12 @@
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
+import { getBusiness } from "@/db/businesses";
 import { insertReservation, type BusyTime, type StoredReservation } from "@/db/reservations";
 import type { BusinessId } from "@/db/schema";
 import { getDayAvailability } from "./available-slots";
+import type { EmailSender } from "./email";
 import type { Professional } from "./professionals";
+import { confirmationEmail, type ConfirmedReservationDetails } from "./reservation-emails";
 import type { Result } from "./result";
 import { dayInTimeZone } from "./time-zone";
 
@@ -47,8 +50,9 @@ export type NewReservation = z.input<typeof newReservationSchema>;
 
 /**
  * A Customer reserves an Available slot. The Reservation is born Confirmed and goes to a
- * free Professional chosen by the system (Auto-assignment). `now` is the clock, received
- * from outside so tests can simulate it.
+ * free Professional chosen by the system (Auto-assignment), and the Customer receives the
+ * confirmation email. `now` (the clock) and `emailSender` are received from outside so
+ * tests can simulate them.
  *
  * Everything the form sends is checked again here: a block outside the Opening hours or
  * the notices is rejected even if the form was forced.
@@ -57,6 +61,7 @@ export async function reserve(
   businessId: BusinessId,
   input: NewReservation,
   now: Date,
+  emailSender: EmailSender,
 ): Promise<Result<Reservation>> {
   const parsed = newReservationSchema.safeParse(input);
   if (!parsed.success) {
@@ -86,7 +91,9 @@ export async function reserve(
       ...customer,
       cancellationToken,
     });
-    if (reservation) return { ok: true, value: reservation };
+    if (!reservation) continue;
+    await sendConfirmationEmail(emailSender, businessId, reservation, customer);
+    return { ok: true, value: reservation };
   }
 
   return { ok: false, error: SLOT_TAKEN_ERROR };
@@ -107,6 +114,36 @@ export function byAssignmentPreference(
     .map((professional) => ({ professional, reservations: reservationsOf(professional) }))
     .sort((a, b) => a.reservations - b.reservations)
     .map(({ professional }) => professional);
+}
+
+/**
+ * Sends the confirmation email without ever failing the Reservation: it is already
+ * Confirmed, so a provider problem is only logged (there are no retries).
+ */
+async function sendConfirmationEmail(
+  emailSender: EmailSender,
+  businessId: BusinessId,
+  reservation: Reservation,
+  customer: Pick<ConfirmedReservationDetails, "customerName" | "customerEmail">,
+): Promise<void> {
+  try {
+    const business = await getBusiness(businessId);
+    if (!business) throw new Error("No se encontró el Negocio de la Reserva");
+    await emailSender.send(
+      confirmationEmail({
+        business,
+        ...customer,
+        startsAt: reservation.startsAt,
+        cancellationToken: reservation.cancellationToken,
+      }),
+    );
+  } catch (error) {
+    // The Customer's email stays out of the logs; the Reservation id is enough to find it.
+    console.error(
+      `No se pudo enviar el email de confirmación de la Reserva ${reservation.id}:`,
+      error,
+    );
+  }
 }
 
 /** 32 random bytes in base64url: unguessable, and safe to put in a link. */
