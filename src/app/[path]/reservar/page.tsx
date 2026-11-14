@@ -6,6 +6,7 @@ import { getAvailableSlots } from "@/core/available-slots";
 import { capitalize, formatDay } from "@/core/format";
 import { dayInTimeZone, TIME_ZONE_LABEL } from "@/core/time-zone";
 import { findBusinessByPath } from "@/db/businesses";
+import { env } from "@/lib/env";
 import { dayHref, SLOT_PARAM } from "../format";
 import styles from "../public-page.module.scss";
 import { ReservationForm } from "./reservation-form";
@@ -63,6 +64,8 @@ async function Reserve({ params, searchParams }: PageProps<"/[path]/reservar">) 
           businessName={business.name}
           backHref={dayHref(path, day)}
           timeZoneLabel={TIME_ZONE_LABEL}
+          // Read at runtime on the server, so the same build works with any key.
+          turnstileSiteKey={env.TURNSTILE_SITE_KEY}
         />
       ) : (
         <section className={styles.card}>

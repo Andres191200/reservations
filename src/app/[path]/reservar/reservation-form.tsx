@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useRef, useState } from "react";
+import { TURNSTILE_FAILED_ERROR, TURNSTILE_TOKEN_FIELD } from "@/lib/turnstile-form";
 import styles from "../public-page.module.scss";
 import { reserveSlot, type ReserveState } from "./actions";
+import { Turnstile, type TurnstileHandle } from "./turnstile";
 
 /**
  * The Customer's contact data for the chosen block. Once the Reservation is Confirmed,
- * the form gives way to the confirmation screen.
+ * the form gives way to the confirmation screen. Turnstile's invisible captcha checks the
+ * browser in the background; the form can be sent once it has a token.
  */
 export function ReservationForm(props: {
   path: string;
@@ -16,9 +19,18 @@ export function ReservationForm(props: {
   /** The public page on the day of the block, to choose another one. */
   backHref: string;
   timeZoneLabel: string;
+  turnstileSiteKey: string;
 }) {
+  const turnstile = useRef<TurnstileHandle>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileFailed, setTurnstileFailed] = useState(false);
+
   const [state, action, pending] = useActionState<ReserveState, FormData>(
-    reserveSlot.bind(null, props.path, props.startsAt),
+    async (previous, formData) => {
+      // The token just sent is used up: ask for the next one while the server answers.
+      turnstile.current?.reset();
+      return reserveSlot(props.path, props.startsAt, previous, formData);
+    },
     {},
   );
 
@@ -72,6 +84,22 @@ export function ReservationForm(props: {
         />
       </label>
 
+      <input type="hidden" name={TURNSTILE_TOKEN_FIELD} value={turnstileToken ?? ""} />
+      <Turnstile
+        ref={turnstile}
+        siteKey={props.turnstileSiteKey}
+        onToken={(token) => {
+          setTurnstileToken(token);
+          if (token) setTurnstileFailed(false);
+        }}
+        onError={() => setTurnstileFailed(true)}
+      />
+      {turnstileFailed && !turnstileToken && (
+        <p role="alert" className={styles.error}>
+          {TURNSTILE_FAILED_ERROR}
+        </p>
+      )}
+
       {state.error && (
         <p role="alert" className={styles.error}>
           {state.error}
@@ -84,8 +112,12 @@ export function ReservationForm(props: {
         </p>
       )}
 
-      <button type="submit" className={styles.primaryButton} disabled={pending || state.slotTaken}>
-        {pending ? "Reservando…" : "Confirmar Reserva"}
+      <button
+        type="submit"
+        className={styles.primaryButton}
+        disabled={pending || state.slotTaken || !turnstileToken}
+      >
+        {pending ? "Reservando…" : turnstileToken ? "Confirmar Reserva" : "Verificando…"}
       </button>
     </form>
   );

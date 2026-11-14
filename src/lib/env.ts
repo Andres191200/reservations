@@ -28,11 +28,41 @@ const envSchema = z.object({
   MAILPIT_URL: z.url({ error: "Debe ser la URL de Mailpit (http://localhost:8025)" }).default(
     "http://localhost:8025",
   ),
+  /** Cloudflare Turnstile, the invisible captcha of the public Reservation form. */
+  TURNSTILE_SITE_KEY: z
+    .string()
+    .regex(/^[0-9]x[0-9A-Za-z_-]+$/, { error: "No parece una site key de Turnstile (0x…)" })
+    .optional(),
+  TURNSTILE_SECRET_KEY: z
+    .string()
+    .regex(/^[0-9]x[0-9A-Za-z_-]+$/, { error: "No parece una secret key de Turnstile (0x…)" })
+    .optional(),
 });
 
-/** With Resend, the key and the sender are mandatory; Mailpit accepts any sender. */
-const envWithEmailSchema = envSchema
+/**
+ * Turnstile's test keys: an invisible widget that always passes, and a secret that accepts
+ * any token (https://developers.cloudflare.com/turnstile/troubleshooting/testing/).
+ * Outside production they are the default, so nobody has to solve real captchas locally.
+ */
+export const TURNSTILE_TEST_SITE_KEY = "1x00000000000000000000BB";
+export const TURNSTILE_TEST_SECRET_KEY = "1x0000000000000000000000000000000AA";
+
+/**
+ * With Resend, the key and the sender are mandatory; Mailpit accepts any sender.
+ * In production, the real Turnstile keys are mandatory.
+ */
+const envWithRequirementsSchema = envSchema
   .superRefine((env, context) => {
+    if (env.NODE_ENV === "production") {
+      for (const key of ["TURNSTILE_SITE_KEY", "TURNSTILE_SECRET_KEY"] as const) {
+        if (env[key]) continue;
+        context.addIssue({
+          code: "custom",
+          path: [key],
+          message: "Es obligatoria en producción. Se genera en el panel de Cloudflare (Turnstile).",
+        });
+      }
+    }
     if (env.EMAIL_TRANSPORT !== "resend") return;
     if (!env.RESEND_API_KEY) {
       context.addIssue({
@@ -49,9 +79,14 @@ const envWithEmailSchema = envSchema
       });
     }
   })
-  .transform((env) => ({ ...env, EMAIL_FROM: env.EMAIL_FROM ?? "reservas@localhost.test" }));
+  .transform((env) => ({
+    ...env,
+    EMAIL_FROM: env.EMAIL_FROM ?? "reservas@localhost.test",
+    TURNSTILE_SITE_KEY: env.TURNSTILE_SITE_KEY ?? TURNSTILE_TEST_SITE_KEY,
+    TURNSTILE_SECRET_KEY: env.TURNSTILE_SECRET_KEY ?? TURNSTILE_TEST_SECRET_KEY,
+  }));
 
-const parsed = envWithEmailSchema.safeParse({
+const parsed = envWithRequirementsSchema.safeParse({
   NODE_ENV: process.env.NODE_ENV,
   NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
   DATABASE_URL: process.env.DATABASE_URL,
@@ -61,6 +96,8 @@ const parsed = envWithEmailSchema.safeParse({
   EMAIL_FROM: process.env.EMAIL_FROM || undefined,
   RESEND_API_KEY: process.env.RESEND_API_KEY || undefined,
   MAILPIT_URL: process.env.MAILPIT_URL || undefined,
+  TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY || undefined,
+  TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY || undefined,
 });
 
 if (!parsed.success) {
