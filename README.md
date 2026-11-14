@@ -38,6 +38,23 @@ El link de los emails se arma con `BETTER_AUTH_URL`, la URL base de la app. Si u
 
 El núcleo no sabe de Resend ni de Mailpit: recibe el envío de emails desde afuera (`EmailSender`, en [src/core/email.ts](src/core/email.ts)), igual que el reloj. La app le pasa el real ([src/lib/email-sender.ts](src/lib/email-sender.ts)) y los tests un falso ([src/test/fake-email-sender.ts](src/test/fake-email-sender.ts)) que registra lo que se habría mandado y puede simular un fallo.
 
+## Protección de la página pública
+
+El formulario público de Reserva tiene dos protecciones, que aplica su server action ([src/app/[path]/reservar/actions.ts](src/app/[path]/reservar/actions.ts)) antes de llamar al núcleo. Las Reservas que carga el Administrador desde el panel no pasan por ninguna de las dos.
+
+- **Captcha invisible (Cloudflare Turnstile)**: el widget verifica el navegador en segundo plano y el botón de reservar se habilita cuando hay un token; el servidor lo valida con Cloudflare ([src/lib/turnstile.ts](src/lib/turnstile.ts)). Si Cloudflare no responde, la Reserva se rechaza. Las claves son `TURNSTILE_SITE_KEY` y `TURNSTILE_SECRET_KEY`: en producción son obligatorias (se crean en el panel de Cloudflare, en modo "Invisible"); en desarrollo y tests, si no están, se usan las [claves de prueba](https://developers.cloudflare.com/turnstile/troubleshooting/testing/) de Cloudflare, que siempre pasan:
+
+  | Variable | Clave de prueba | Efecto |
+  | --- | --- | --- |
+  | `TURNSTILE_SITE_KEY` | `1x00000000000000000000BB` | Widget invisible que siempre pasa |
+  | `TURNSTILE_SITE_KEY` | `2x00000000000000000000BB` | Widget invisible que siempre falla (para probar el error) |
+  | `TURNSTILE_SECRET_KEY` | `1x0000000000000000000000000000000AA` | Acepta cualquier token |
+  | `TURNSTILE_SECRET_KEY` | `2x0000000000000000000000000000000AA` | Rechaza todos los tokens |
+
+- **Rate limit**: cada IP puede crear hasta 10 Reservas por hora (ventana deslizante); a partir de la número 11 se rechaza con un mensaje que dice en cuántos minutos puede volver a reservar. Solo cuentan las Reservas creadas: una rechazada (datos inválidos, horario ocupado) no consume el cupo. El conteo está en la memoria del servidor ([src/lib/rate-limiter.ts](src/lib/rate-limiter.ts)): alcanza con una sola instancia de la app y se reinicia al reiniciarla.
+
+La IP sale del último valor del encabezado `X-Forwarded-For` ([src/lib/client-ip.ts](src/lib/client-ip.ts)), que es el que agrega el reverse proxy; los valores a su izquierda los puede inventar el cliente. Por eso en producción la app tiene que estar detrás de **un** reverse proxy que agregue (o reemplace) ese encabezado, y no se tiene que poder llegar a ella sin pasar por él. Si hubiera otro proxy adelante (por ejemplo, el proxy de Cloudflare), el último valor sería la IP de ese proxy y todos los Clientes compartirían el límite: en ese caso hay que configurar el reverse proxy para que confíe en él y reenvíe la IP real.
+
 ## Base de datos y migraciones
 
 El esquema se define en [src/db/schema.ts](src/db/schema.ts). Las migraciones son archivos SQL versionados en [drizzle/](drizzle/).

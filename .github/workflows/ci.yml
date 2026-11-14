@@ -14,6 +14,9 @@ jobs:
       DATABASE_URL: postgres://reservas:reservas@localhost:5432/reservas_test
       BETTER_AUTH_SECRET: ci-secret-do-not-use-in-production-0123456789
       BETTER_AUTH_URL: http://localhost:3000
+      # Cloudflare's Turnstile test keys: typegen runs as production, where they are mandatory.
+      TURNSTILE_SITE_KEY: 1x00000000000000000000BB
+      TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
 
     services:
       postgres:
