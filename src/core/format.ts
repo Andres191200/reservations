@@ -1,6 +1,13 @@
+import type { ReservationStatus } from "@/db/schema";
 import { instantInTimeZone, TIME_ZONE, type CalendarDay } from "./time-zone";
 
-// How days are written in the texts users read (pages and emails), in Spanish.
+// How things are written in the texts users read (pages and emails), in Spanish.
+
+/** The Reservation status as users read it. */
+export const RESERVATION_STATUS_LABEL: Record<ReservationStatus, string> = {
+  confirmed: "Confirmada",
+  cancelled: "Cancelada",
+};
 
 const dayFormat = new Intl.DateTimeFormat("es-AR", {
   weekday: "long",

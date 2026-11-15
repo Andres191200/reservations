@@ -1,6 +1,7 @@
-import { and, eq, gt, lt } from "drizzle-orm";
+import { and, asc, eq, gt, gte, lt } from "drizzle-orm";
 import { db } from "./index";
 import {
+  professionals,
   reservations,
   type BusinessId,
   type CancelledBy,
@@ -93,6 +94,61 @@ export async function cancelReservation(
     )
     .returning(customerReservationColumns);
   return cancelled;
+}
+
+/** A Reservation as the Admin sees it in the panel, with the Professional assigned to it. */
+export type AdminReservation = {
+  id: ReservationId;
+  startsAt: Date;
+  endsAt: Date;
+  status: ReservationStatus;
+  cancelledBy: CancelledBy | null;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string | null;
+  professional: { id: ProfessionalId; name: string };
+};
+
+/**
+ * The Reservations of the Business, Confirmed or Cancelled, that start in [from, to),
+ * sorted by start and then by Professional name. Those of deactivated Professionals are
+ * included: they are part of the history.
+ */
+export async function listReservations(
+  businessId: BusinessId,
+  from: Date,
+  to: Date,
+): Promise<AdminReservation[]> {
+  return db
+    .select({
+      id: reservations.id,
+      startsAt: reservations.startsAt,
+      endsAt: reservations.endsAt,
+      status: reservations.status,
+      cancelledBy: reservations.cancelledBy,
+      customerName: reservations.customerName,
+      customerEmail: reservations.customerEmail,
+      customerPhone: reservations.customerPhone,
+      professional: { id: professionals.id, name: professionals.name },
+    })
+    .from(reservations)
+    .innerJoin(
+      professionals,
+      and(
+        eq(professionals.id, reservations.professionalId),
+        // Redundant with the Reservation's own Business, but keeps the join from ever
+        // reaching another Business's Professional.
+        eq(professionals.businessId, businessId),
+      ),
+    )
+    .where(
+      and(
+        eq(reservations.businessId, businessId),
+        gte(reservations.startsAt, from),
+        lt(reservations.startsAt, to),
+      ),
+    )
+    .orderBy(asc(reservations.startsAt), asc(professionals.name), asc(reservations.createdAt));
 }
 
 /** Name of the exclusion constraint of drizzle/0003_reservations.sql. */
