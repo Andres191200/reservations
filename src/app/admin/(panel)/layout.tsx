@@ -15,6 +15,8 @@ export default function PanelLayout({ children }: LayoutProps<"/admin">) {
           </Suspense>
           <nav className={styles.nav} aria-label="Panel">
             <Link href="/admin">Inicio</Link>
+            <Link href="/admin/reservas">Reservas</Link>
+            <Link href="/admin/agenda">Agenda</Link>
             <Link href="/admin/profesionales">Profesionales</Link>
             <Link href="/admin/configuracion">Configuración</Link>
           </nav>

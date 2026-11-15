@@ -1,0 +1,49 @@
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import { getDayReservations } from "@/core/agenda";
+import { dayInTimeZone } from "@/core/time-zone";
+import styles from "../../admin.module.scss";
+import { getSessionBusiness } from "../../session";
+import { chosenDay } from "../day";
+import { DayNavigation } from "../day-navigation";
+import { ReservationList } from "../reservation-list";
+
+export const metadata: Metadata = { title: "Reservas del día · Reservas" };
+
+const ROUTE = "/admin/reservas";
+
+/** The Reservations of a day, of every Professional, to organize the day. */
+export default function DayReservationsPage({ searchParams }: PageProps<"/admin/reservas">) {
+  return (
+    <>
+      <h1>Reservas del día</h1>
+      <div className={styles.sections}>
+        <section className={styles.section}>
+          <Suspense fallback={<p className={styles.muted}>Cargando…</p>}>
+            <DayReservations searchParams={searchParams} />
+          </Suspense>
+        </section>
+      </div>
+    </>
+  );
+}
+
+async function DayReservations({
+  searchParams,
+}: Pick<PageProps<"/admin/reservas">, "searchParams">) {
+  const [business, query] = await Promise.all([getSessionBusiness(), searchParams]);
+  const today = dayInTimeZone(new Date());
+  const day = chosenDay(query, today);
+  const reservations = await getDayReservations(business.id, day);
+
+  return (
+    <>
+      <DayNavigation route={ROUTE} day={day} today={today} />
+      {reservations.length === 0 ? (
+        <p className={styles.notice}>No hay Reservas este día.</p>
+      ) : (
+        <ReservationList reservations={reservations} day={day} />
+      )}
+    </>
+  );
+}

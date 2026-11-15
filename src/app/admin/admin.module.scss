@@ -312,3 +312,173 @@
     flex-basis: 100%;
   }
 }
+
+.notice {
+  padding: $space * 2;
+  border: 1px dashed $color-border;
+  border-radius: $radius;
+  color: $color-muted;
+  text-align: center;
+}
+
+// Day shown by a panel page (see day-navigation.tsx).
+.dayNavigation {
+  display: grid;
+  gap: $space * 1.5;
+}
+
+.dayLinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: $space * 2;
+
+  a {
+    padding: $space * 0.5 0;
+    text-decoration: none;
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+}
+
+.dayPicker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: $space * 1.5;
+
+  .field {
+    flex: 1 1 180px;
+  }
+}
+
+// Professionals of the Agenda: one link per Professional, the chosen one highlighted.
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space;
+
+  a {
+    padding: $space * 0.75 $space * 1.5;
+    border: 1px solid $color-border;
+    border-radius: $radius;
+    color: $color-text;
+    text-decoration: none;
+
+    &:hover {
+      border-color: $color-primary;
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+
+    &[aria-current="page"] {
+      border-color: $color-primary;
+      background: rgba($color-primary, 0.15);
+      color: $color-primary;
+      font-weight: 600;
+    }
+  }
+}
+
+// Reservations of a day (see reservation-list.tsx). Mobile: time above, details below;
+// wider screens: one line per Reservation.
+.reservations {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reservation,
+.cancelledReservation {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $space $space * 2;
+  padding: $space * 1.5 0;
+  border-bottom: 1px solid $color-border;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  @include up(sm) {
+    grid-template-columns: 110px 1fr auto;
+    align-items: center;
+  }
+}
+
+// A Cancelled Reservation stays in the list, but faded and struck through.
+.cancelledReservation {
+  .reservationTime,
+  .customerName {
+    color: $color-muted;
+    text-decoration: line-through;
+  }
+}
+
+.reservationTime {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.reservationCustomer {
+  display: grid;
+  gap: $space * 0.25;
+  min-width: 0;
+}
+
+.customerName {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space * 0.25 $space * 1.5;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+
+  a {
+    color: $color-muted;
+
+    &:hover {
+      color: $color-primary;
+    }
+  }
+}
+
+.reservationMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space;
+  grid-column: 1 / -1;
+
+  @include up(sm) {
+    grid-column: auto;
+    justify-content: flex-end;
+  }
+}
+
+.confirmedBadge,
+.cancelledBadge {
+  padding: $space * 0.25 $space;
+  border-radius: $radius;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.confirmedBadge {
+  background: rgba($color-success, 0.15);
+  color: $color-success;
+}
+
+.cancelledBadge {
+  background: rgba($color-danger, 0.15);
+  color: $color-danger;
+}

@@ -3,10 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getReservationForCustomer } from "@/core/cancellations";
-import { capitalize, formatDay } from "@/core/format";
+import { capitalize, formatDay, RESERVATION_STATUS_LABEL } from "@/core/format";
 import { dayInTimeZone, TIME_ZONE_LABEL, timeInTimeZone } from "@/core/time-zone";
 import { findBusinessByPath } from "@/db/businesses";
-import type { ReservationStatus } from "@/db/schema";
 import styles from "../../public-page.module.scss";
 import { CancelReservation } from "./cancel-reservation";
 
@@ -21,11 +20,6 @@ export async function generateMetadata({
     referrer: "no-referrer",
   };
 }
-
-const STATUS_LABEL: Record<ReservationStatus, string> = {
-  confirmed: "Confirmada",
-  cancelled: "Cancelada",
-};
 
 /**
  * Page of the Cancellation link: the Customer sees their Reservation and, while the
@@ -77,7 +71,7 @@ async function CustomerReservation({
             <dt>Estado</dt>
             <dd>
               <span className={status === "cancelled" ? styles.cancelled : styles.confirmed}>
-                {STATUS_LABEL[status]}
+                {RESERVATION_STATUS_LABEL[status]}
               </span>
             </dd>
           </div>
