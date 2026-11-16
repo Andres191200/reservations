@@ -9,9 +9,13 @@ import { getAvailableSlots } from "./available-slots";
 import { cancelByCustomer } from "./cancellations";
 import { addProfessional, deactivateProfessional } from "./professionals";
 import {
+  PROFESSIONAL_NOT_FOUND_ERROR,
+  professionalBusyError,
   reserve,
+  reserveByAdmin,
   SLOT_NOT_RESERVABLE_ERROR,
   SLOT_TAKEN_ERROR,
+  type NewAdminReservation,
   type NewReservation,
 } from "./reservations";
 
@@ -32,6 +36,21 @@ function reserveAt(
   emailSender = fakeEmailSender(),
 ) {
   return reserve(businessId, { startsAt, ...customer, ...overrides }, now, emailSender);
+}
+
+function reserveByAdminAt(
+  businessId: BusinessId,
+  startsAt: string,
+  overrides: Partial<NewAdminReservation> = {},
+  now = theDayBefore,
+  emailSender = fakeEmailSender(),
+) {
+  return reserveByAdmin(
+    businessId,
+    { startsAt, customerName: "Ana Pérez", ...overrides },
+    now,
+    emailSender,
+  );
 }
 
 async function confirmedReservations(businessId: BusinessId) {
@@ -280,6 +299,7 @@ describe("Exclusion constraint", () => {
       customerName: "Ana",
       customerEmail: "ana@mail.com",
       customerPhone: null,
+      createdBy: "customer" as const,
     };
 
     const first = await insertReservation({
@@ -351,5 +371,263 @@ describe("Simultaneous Reservations", () => {
     expect(results.every((result) => result.ok)).toBe(true);
     const assigned = results.map((result) => result.ok && result.value.professionalId);
     expect(assigned.sort()).toEqual(professionals.map((p) => p.id).sort());
+  });
+});
+
+describe("Who created the Reservation", () => {
+  it("records that the Customer created the ones from the public page", async () => {
+    const { businessId } = await setUpBusiness();
+
+    await reserveAt(businessId, AT_0900);
+
+    const [stored] = await confirmedReservations(businessId);
+    expect(stored.createdBy).toBe("customer");
+  });
+});
+
+describe("The Admin enters a Reservation", () => {
+  it("creates a Confirmed Reservation with only the name, and records that the Admin created it", async () => {
+    const { businessId, professionals } = await setUpBusiness();
+    const emails = fakeEmailSender();
+
+    const result = await reserveByAdminAt(businessId, AT_0900, {}, theDayBefore, emails);
+
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        id: expect.any(String),
+        professionalId: professionals[0].id,
+        startsAt: new Date(AT_0900),
+        endsAt: new Date(AT_1000),
+        status: "confirmed",
+        cancellationToken: expect.any(String),
+      },
+    });
+    const [stored] = await confirmedReservations(businessId);
+    expect(stored).toMatchObject({
+      customerName: "Ana Pérez",
+      customerEmail: null,
+      customerPhone: null,
+      createdBy: "admin",
+    });
+    expect(emails.sent).toEqual([]);
+  });
+
+  it("stores the optional email and phone, trimmed and the email in lowercase", async () => {
+    const { businessId } = await setUpBusiness();
+
+    await reserveByAdminAt(businessId, AT_0900, {
+      customerName: " Ana Pérez ",
+      customerEmail: " Ana@Mail.COM ",
+      customerPhone: " 11 5555-1234 ",
+    });
+
+    const [stored] = await confirmedReservations(businessId);
+    expect(stored).toMatchObject({
+      customerName: "Ana Pérez",
+      customerEmail: "ana@mail.com",
+      customerPhone: "11 5555-1234",
+    });
+  });
+
+  it("treats blank email and phone as not given", async () => {
+    const { businessId } = await setUpBusiness();
+    const emails = fakeEmailSender();
+
+    await reserveByAdminAt(
+      businessId,
+      AT_0900,
+      { customerEmail: "   ", customerPhone: "  ", professionalId: "" },
+      theDayBefore,
+      emails,
+    );
+
+    const [stored] = await confirmedReservations(businessId);
+    expect(stored).toMatchObject({ customerEmail: null, customerPhone: null });
+    expect(emails.sent).toEqual([]);
+  });
+
+  it("with an email, sends the Customer the confirmation email with the Cancellation link", async () => {
+    const { businessId } = await setUpBusiness();
+    const emails = fakeEmailSender();
+
+    const result = await reserveByAdminAt(
+      businessId,
+      AT_0900,
+      { customerEmail: "ana@mail.com" },
+      theDayBefore,
+      emails,
+    );
+
+    if (!result.ok) throw new Error(result.error);
+    expect(emails.sent).toHaveLength(1);
+    expect(emails.sent[0]).toMatchObject({
+      to: "ana@mail.com",
+      subject: "Reserva confirmada en Negocio don-pepe: Miércoles 11 de noviembre, 09:00",
+    });
+    expect(emails.sent[0].text).toContain(
+      `http://localhost:3000/don-pepe/reserva/${result.value.cancellationToken}`,
+    );
+  });
+
+  it("the Customer can cancel it with the Cancellation link, like any other", async () => {
+    const { businessId } = await setUpBusiness();
+    const reserved = await reserveByAdminAt(businessId, AT_0900, { customerEmail: "ana@mail.com" });
+    if (!reserved.ok) throw new Error(reserved.error);
+
+    const cancelled = await cancelByCustomer(
+      businessId,
+      reserved.value.cancellationToken,
+      theDayBefore,
+      fakeEmailSender(),
+    );
+
+    expect(cancelled.ok).toBe(true);
+  });
+
+  it("without an email, its Cancellation sends nothing either", async () => {
+    const { businessId } = await setUpBusiness();
+    const reserved = await reserveByAdminAt(businessId, AT_0900);
+    if (!reserved.ok) throw new Error(reserved.error);
+    const emails = fakeEmailSender();
+
+    const cancelled = await cancelByCustomer(
+      businessId,
+      reserved.value.cancellationToken,
+      theDayBefore,
+      emails,
+    );
+
+    expect(cancelled.ok).toBe(true);
+    expect(emails.sent).toEqual([]);
+  });
+
+  it.each([
+    ["an empty name", { customerName: "  " }, "Completá el nombre del Cliente."],
+    ["an invalid email", { customerEmail: "ana@" }, "El email no es válido."],
+    [
+      "a phone with letters",
+      { customerPhone: "llamame" },
+      "El teléfono solo puede tener números, espacios, +, - y paréntesis.",
+    ],
+    ["a Professional id that is not one", { professionalId: "cualquiera" }, PROFESSIONAL_NOT_FOUND_ERROR],
+  ])("rejects %s", async (_case, overrides, error) => {
+    const { businessId } = await setUpBusiness();
+
+    expect(await reserveByAdminAt(businessId, AT_0900, overrides)).toEqual({ ok: false, error });
+    expect(await confirmedReservations(businessId)).toEqual([]);
+  });
+});
+
+describe("The Admin enters a Reservation: Opening hours rules", () => {
+  it.each([
+    ["before the opening", "2026-11-11T11:00:00.000Z"],
+    ["not at the start of a block", "2026-11-11T12:30:00.000Z"],
+    ["on a day the Opening hours say is closed", "2026-11-12T12:00:00.000Z"],
+    ["beyond the Maximum notice", "2026-12-16T12:00:00.000Z"],
+  ])("rejects a Reservation %s, like for the Customer", async (_case, startsAt) => {
+    const { businessId } = await setUpBusiness();
+
+    expect(await reserveByAdminAt(businessId, startsAt)).toEqual({
+      ok: false,
+      error: SLOT_NOT_RESERVABLE_ERROR,
+    });
+    expect(await confirmedReservations(businessId)).toEqual([]);
+  });
+
+  it("rejects a Reservation within the Minimum notice, like for the Customer", async () => {
+    const { businessId } = await setUpBusiness({ rules: { minimumNoticeHours: 2 } });
+    const at0830 = new Date("2026-11-11T11:30:00Z");
+
+    expect(await reserveByAdminAt(businessId, AT_1000, {}, at0830)).toEqual({
+      ok: false,
+      error: SLOT_NOT_RESERVABLE_ERROR,
+    });
+  });
+});
+
+describe("The Admin enters a Reservation: the Professional", () => {
+  it("without choosing one, applies the Auto-assignment", async () => {
+    const { businessId, professionals } = await setUpBusiness({ professionals: 2 });
+    const [, second] = professionals;
+    // Profesional 1 already has one that day: the Auto-assignment prefers Profesional 2.
+    await reserveAt(businessId, AT_0900);
+
+    const result = await reserveByAdminAt(businessId, AT_1000);
+
+    expect(result.ok && result.value.professionalId).toBe(second.id);
+  });
+
+  it("assigns the chosen one, even where the Auto-assignment would choose another", async () => {
+    const { businessId, professionals } = await setUpBusiness({ professionals: 2 });
+    const [first] = professionals;
+    await reserveAt(businessId, AT_0900);
+
+    const result = await reserveByAdminAt(businessId, AT_1000, { professionalId: first.id });
+
+    expect(result.ok && result.value.professionalId).toBe(first.id);
+  });
+
+  it("rejects the chosen one if it is already busy at that time, even with others free", async () => {
+    const { businessId, professionals } = await setUpBusiness({ professionals: 2 });
+    const [first] = professionals;
+    await reserveByAdminAt(businessId, AT_0900, { professionalId: first.id });
+
+    const result = await reserveByAdminAt(businessId, AT_0900, {
+      customerName: "Bruno",
+      professionalId: first.id,
+    });
+
+    expect(result).toEqual({ ok: false, error: professionalBusyError("Profesional 1") });
+    const stored = await confirmedReservations(businessId);
+    expect(stored.map((r) => r.customerName)).toEqual(["Ana Pérez"]);
+  });
+
+  it("when the chosen one gets taken at the same time, only one Reservation goes through", async () => {
+    const { businessId, professionals } = await setUpBusiness({ professionals: 2 });
+    const [first] = professionals;
+
+    const results = await Promise.all([
+      reserveByAdminAt(businessId, AT_0900, { customerName: "Bruno", professionalId: first.id }),
+      reserveByAdminAt(businessId, AT_0900, { customerName: "Carla", professionalId: first.id }),
+    ]);
+
+    expect(results.filter((result) => result.ok)).toHaveLength(1);
+    expect(results.filter((result) => !result.ok)).toEqual([
+      { ok: false, error: professionalBusyError("Profesional 1") },
+    ]);
+  });
+
+  it("without choosing one, says the block was taken once nobody is free", async () => {
+    const { businessId } = await setUpBusiness();
+    await reserveAt(businessId, AT_0900);
+
+    expect(await reserveByAdminAt(businessId, AT_0900)).toEqual({
+      ok: false,
+      error: SLOT_TAKEN_ERROR,
+    });
+  });
+
+  it("rejects a deactivated Professional", async () => {
+    const { businessId, professionals } = await setUpBusiness({ professionals: 2 });
+    await deactivateProfessional(businessId, professionals[0].id);
+
+    const result = await reserveByAdminAt(businessId, AT_0900, {
+      professionalId: professionals[0].id,
+    });
+
+    expect(result).toEqual({ ok: false, error: PROFESSIONAL_NOT_FOUND_ERROR });
+  });
+
+  it("rejects a Professional of another Business", async () => {
+    const { businessId } = await setUpBusiness();
+    const other = await setUpBusiness({ path: "otro" });
+
+    const result = await reserveByAdminAt(businessId, AT_0900, {
+      professionalId: other.professionals[0].id,
+    });
+
+    expect(result).toEqual({ ok: false, error: PROFESSIONAL_NOT_FOUND_ERROR });
+    expect(await confirmedReservations(other.businessId)).toEqual([]);
   });
 });

@@ -132,6 +132,9 @@ async function sendCancellationEmail(
   businessId: BusinessId,
   reservation: CustomerReservation,
 ): Promise<void> {
+  // A Reservation the Admin entered without email has nobody to tell.
+  const { customerEmail } = reservation;
+  if (!customerEmail) return;
   // The Customer's email stays out of the logs; the Reservation id is enough to find it.
   await sendWithoutFailing(
     emailSender,
@@ -141,7 +144,7 @@ async function sendCancellationEmail(
       return cancellationEmail({
         business,
         customerName: reservation.customerName,
-        customerEmail: reservation.customerEmail,
+        customerEmail,
         startsAt: reservation.startsAt,
       });
     },

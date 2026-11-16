@@ -105,8 +105,18 @@ export const cancelledBy = pgEnum("cancelled_by", ["customer", "business"]);
 export type CancelledBy = (typeof cancelledBy.enumValues)[number];
 
 /**
+ * Who created a Reservation: the Customer, from the public page, or the Admin, from the
+ * panel.
+ */
+export const createdBy = pgEnum("created_by", ["customer", "admin"]);
+
+export type CreatedBy = (typeof createdBy.enumValues)[number];
+
+/**
  * Reservation: a Customer's commitment to be served by a Professional at a given time.
  * The Customer has no account: their contact data is stored on the Reservation itself.
+ * The email is mandatory when the Customer reserves, and optional when the Admin enters
+ * the Reservation from the panel.
  *
  * Two Confirmed Reservations of the same Professional cannot overlap. Drizzle cannot
  * express that exclusion constraint (`reservations_no_overlap`), so it lives in the
@@ -129,8 +139,9 @@ export const reservations = pgTable(
     endsAt: timestamp({ withTimezone: true }).notNull(),
     status: reservationStatus().notNull().default("confirmed"),
     customerName: text().notNull(),
-    customerEmail: text().notNull(),
+    customerEmail: text(),
     customerPhone: text(),
+    createdBy: createdBy().notNull(),
     /** Random, unguessable secret of the Customer's cancellation link. */
     cancellationToken: text().notNull().unique(),
     /** Cancellation: who made it and when. Both are set exactly when it is Cancelled. */
@@ -144,6 +155,10 @@ export const reservations = pgTable(
     check(
       "reservations_cancellation_recorded",
       sql`(${table.status} = 'cancelled') = (${table.cancelledBy} IS NOT NULL AND ${table.cancelledAt} IS NOT NULL)`,
+    ),
+    check(
+      "reservations_customer_email_required",
+      sql`${table.createdBy} = 'admin' OR ${table.customerEmail} IS NOT NULL`,
     ),
   ],
 );

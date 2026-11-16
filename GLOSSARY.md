@@ -69,7 +69,7 @@ _Avoid_: Turno, slot (en castellano), hueco, lugar libre / Opening, Free spot
 ### Reservas
 
 **Reserva** · _en_: **Reservation**:
-Compromiso de un Cliente para ser atendido por un Profesional en un horario determinado. No especifica qué se le va a hacer; eso se decide en la atención.
+Compromiso de un Cliente para ser atendido por un Profesional en un horario determinado. No especifica qué se le va a hacer; eso se decide en la atención. La crea el Cliente desde la página pública, o el Administrador desde el panel (cuando el Cliente la pide por otro medio); se registra quién la creó. Solo la que carga el Administrador puede no tener email.
 _Avoid_: Turno, cita, booking, appointment / Booking, Appointment
 
 **Asignación automática** · _en_: **Auto-assignment**:
@@ -93,7 +93,7 @@ Paso de una Reserva a Cancelada, hecho por el Cliente o por el Negocio; se regis
 _Avoid_: Baja, anulación, reprogramación / Void, Reschedule
 
 **Email de confirmación** · _en_: **Confirmation email**:
-Email que recibe el Cliente cuando se crea su Reserva, con el Negocio, el día, el horario y el Link de cancelación. Si no se puede enviar, la Reserva queda creada igual.
+Email que recibe el Cliente cuando se crea su Reserva, con el Negocio, el día, el horario y el Link de cancelación. Si no se puede enviar, la Reserva queda creada igual. Si el Administrador cargó la Reserva sin email, no se envía.
 _Avoid_: Comprobante, notificación, aviso / Receipt, Notification
 
 **Email de cancelación** · _en_: **Cancellation email**:
