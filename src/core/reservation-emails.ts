@@ -1,3 +1,4 @@
+import type { CancelledBy } from "@/db/schema";
 import { env } from "@/lib/env";
 import type { Email } from "./email";
 import { capitalize, formatDay } from "./format";
@@ -71,18 +72,25 @@ export type CancelledReservationDetails = {
   customerName: string;
   customerEmail: string;
   startsAt: Date;
+  cancelledBy: CancelledBy;
 };
 
-/** The email the Customer receives when they cancel their Reservation. */
+/**
+ * The email the Customer receives when their Reservation is Cancelled, by them or by the
+ * Business. When the Business cancelled it, the email says so.
+ */
 export function cancellationEmail(details: CancelledReservationDetails): Email {
   const { business, customerName, startsAt } = details;
   const { day, time } = whenText(startsAt);
   const link = publicPageLink(business.path);
+  const byTheBusiness = details.cancelledBy === "business";
 
   const text = [
     `Hola, ${customerName}:`,
     "",
-    `Tu Reserva en ${business.name} quedó cancelada.`,
+    byTheBusiness
+      ? `${business.name} canceló tu Reserva.`
+      : `Tu Reserva en ${business.name} quedó cancelada.`,
     "",
     `Día: ${day}`,
     `Horario: ${time}`,
@@ -95,7 +103,11 @@ export function cancellationEmail(details: CancelledReservationDetails): Email {
 <html lang="es">
   <body style="font-family: sans-serif; color: #1a1a1a; line-height: 1.5">
     <p>Hola, ${escapeHtml(customerName)}:</p>
-    <p>Tu Reserva en <strong>${escapeHtml(business.name)}</strong> quedó cancelada.</p>
+    <p>${
+      byTheBusiness
+        ? `<strong>${escapeHtml(business.name)}</strong> canceló tu Reserva.`
+        : `Tu Reserva en <strong>${escapeHtml(business.name)}</strong> quedó cancelada.`
+    }</p>
     <p>
       <strong>Día:</strong> ${escapeHtml(day)}<br />
       <strong>Horario:</strong> ${escapeHtml(time)}

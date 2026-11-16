@@ -1,7 +1,9 @@
+import { z } from "zod";
 import { getBusiness } from "@/db/businesses";
 import {
   cancelReservation,
   findReservationByToken,
+  findReservationStatus,
   type CustomerReservation,
 } from "@/db/reservations";
 import type { BusinessId, CancelledBy, ReservationId, ReservationStatus } from "@/db/schema";
@@ -15,7 +17,7 @@ const HOUR_MS = 60 * 60 * 1000;
 /** A real token is 43 characters (see `generateCancellationToken`): anything far longer is not one. */
 const TOKEN_MAX_LENGTH = 100;
 
-/** Shown for a token that does not exist, or that belongs to another Business. */
+/** Shown for a token or id that does not exist, or that belongs to another Business. */
 export const RESERVATION_NOT_FOUND_ERROR = "Reserva no encontrada.";
 
 export const ALREADY_CANCELLED_ERROR = "Esta Reserva ya está cancelada.";
@@ -55,9 +57,9 @@ export async function getReservationForCustomer(
 /**
  * Cancellation by the Customer, through their Cancellation link. Only a Confirmed
  * Reservation, and only before the Business's Cancellation deadline; past it, only the
- * Business can cancel it. Once Cancelled, its time is an Available slot again (only
- * Confirmed Reservations keep a Professional busy) and the Reservation is never
- * reactivated or modified.
+ * Business can cancel it (`cancelByBusiness`). Once Cancelled, its time is an Available
+ * slot again (only Confirmed Reservations keep a Professional busy) and the Reservation
+ * is never reactivated or modified.
  *
  * The Customer then receives the cancellation email. If it cannot be sent, the
  * Cancellation stays made and the error is logged.
@@ -85,8 +87,44 @@ export async function cancelByCustomer(
   // Someone else cancelled it between reading and writing (another tab, the Business).
   if (!cancelled) return { ok: false, error: ALREADY_CANCELLED_ERROR };
 
-  await sendCancellationEmail(emailSender, businessId, cancelled);
+  await sendCancellationEmail(emailSender, businessId, cancelled, "customer");
   return { ok: true, value: forCustomer(cancelled, deadlineHours, now) };
+}
+
+/**
+ * Cancellation by the Business, from the panel. Any Confirmed Reservation of the
+ * Business, with no Cancellation deadline: even one that already started or ended.
+ * `reservationId` comes from the panel, so it is checked: the id of another Business's
+ * Reservation finds nothing. Once Cancelled, its time is an Available slot again and the
+ * Reservation is never reactivated or modified.
+ *
+ * If the Customer left an email, they then receive the cancellation email. If it cannot
+ * be sent, the Cancellation stays made and the error is logged.
+ */
+export async function cancelByBusiness(
+  businessId: BusinessId,
+  reservationId: string,
+  now: Date,
+  emailSender: EmailSender,
+): Promise<Result<void>> {
+  if (!z.uuid().safeParse(reservationId).success) {
+    return { ok: false, error: RESERVATION_NOT_FOUND_ERROR };
+  }
+  const id = reservationId as ReservationId;
+
+  const cancelled = await cancelReservation(businessId, id, {
+    cancelledBy: "business",
+    cancelledAt: now,
+  });
+  if (!cancelled) {
+    // Nothing was cancelled: either it is not a Reservation of this Business, or it was
+    // already Cancelled (maybe a moment ago, by the Customer or from another tab).
+    const status = await findReservationStatus(businessId, id);
+    return { ok: false, error: status ? ALREADY_CANCELLED_ERROR : RESERVATION_NOT_FOUND_ERROR };
+  }
+
+  await sendCancellationEmail(emailSender, businessId, cancelled, "business");
+  return { ok: true, value: undefined };
 }
 
 async function findByToken(
@@ -131,6 +169,7 @@ async function sendCancellationEmail(
   emailSender: EmailSender,
   businessId: BusinessId,
   reservation: CustomerReservation,
+  cancelledBy: CancelledBy,
 ): Promise<void> {
   // A Reservation the Admin entered without email has nobody to tell.
   const { customerEmail } = reservation;
@@ -146,6 +185,7 @@ async function sendCancellationEmail(
         customerName: reservation.customerName,
         customerEmail,
         startsAt: reservation.startsAt,
+        cancelledBy,
       });
     },
     `No se pudo enviar el email de cancelación de la Reserva ${reservation.id}:`,
