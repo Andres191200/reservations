@@ -65,6 +65,7 @@ describe("The Reservations of a day", () => {
       customerName: "Ana",
       customerEmail: "ana@mail.com",
       customerPhone: null,
+      createdBy: "customer",
       professional: first,
     });
   });

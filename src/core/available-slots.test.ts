@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getAvailableSlots, getReservableDays } from "./available-slots";
+import {
+  getAvailableSlots,
+  getAvailableSlotsWithProfessionals,
+  getReservableDays,
+} from "./available-slots";
 import { registerBusiness } from "./businesses";
 import { addProfessional, deactivateProfessional } from "./professionals";
 import { reserve } from "./reservations";
@@ -231,6 +235,43 @@ describe("Confirmed Reservations", () => {
       "10:00",
       "11:00",
     ]);
+  });
+});
+
+describe("Available slots with their free Professionals (for the panel)", () => {
+  it("lists, for each Available slot, the Professionals still free in it", async () => {
+    const { businessId, professionals } = await setUpBusiness({ professionals: 2 });
+    const [first, second] = professionals;
+    // 09:00: Profesional 1 takes it (ties go by name).
+    await reserve(
+      businessId,
+      { startsAt: "2026-11-11T12:00:00Z", customerName: "Ana", customerEmail: "ana@mail.com" },
+      theDayBefore,
+      fakeEmailSender(),
+    );
+
+    const slots = await getAvailableSlotsWithProfessionals(businessId, WEDNESDAY, theDayBefore);
+
+    expect(slots.map((slot) => [slot.time, slot.freeProfessionals])).toEqual([
+      ["09:00", [second]],
+      ["10:00", [first, second]],
+      ["11:00", [first, second]],
+    ]);
+  });
+
+  it("leaves out the blocks where nobody is free, like for the Customer", async () => {
+    const businessId = await setUp();
+    await reserve(
+      businessId,
+      { startsAt: "2026-11-11T12:00:00Z", customerName: "Ana", customerEmail: "ana@mail.com" },
+      theDayBefore,
+      fakeEmailSender(),
+    );
+
+    const slots = await getAvailableSlotsWithProfessionals(businessId, WEDNESDAY, theDayBefore);
+
+    expect(times(slots)).toEqual(times(await getAvailableSlots(businessId, WEDNESDAY, theDayBefore)));
+    expect(times(slots)).toEqual(["10:00", "11:00"]);
   });
 });
 

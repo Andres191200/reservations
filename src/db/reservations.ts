@@ -5,6 +5,7 @@ import {
   reservations,
   type BusinessId,
   type CancelledBy,
+  type CreatedBy,
   type ProfessionalId,
   type ReservationId,
   type ReservationStatus,
@@ -19,8 +20,10 @@ export type NewReservation = {
   startsAt: Date;
   endsAt: Date;
   customerName: string;
-  customerEmail: string;
+  /** Only the Admin can leave it empty. */
+  customerEmail: string | null;
   customerPhone: string | null;
+  createdBy: CreatedBy;
   cancellationToken: string;
 };
 
@@ -36,7 +39,7 @@ export type StoredReservation = {
 /** A Reservation as the Customer sees it through their Cancellation link. */
 export type CustomerReservation = StoredReservation & {
   customerName: string;
-  customerEmail: string;
+  customerEmail: string | null;
   cancelledBy: CancelledBy | null;
 };
 
@@ -104,8 +107,9 @@ export type AdminReservation = {
   status: ReservationStatus;
   cancelledBy: CancelledBy | null;
   customerName: string;
-  customerEmail: string;
+  customerEmail: string | null;
   customerPhone: string | null;
+  createdBy: CreatedBy;
   professional: { id: ProfessionalId; name: string };
 };
 
@@ -129,6 +133,7 @@ export async function listReservations(
       customerName: reservations.customerName,
       customerEmail: reservations.customerEmail,
       customerPhone: reservations.customerPhone,
+      createdBy: reservations.createdBy,
       professional: { id: professionals.id, name: professionals.name },
     })
     .from(reservations)

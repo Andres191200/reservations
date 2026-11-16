@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { getDayReservations } from "@/core/agenda";
 import { dayInTimeZone } from "@/core/time-zone";
 import styles from "../../admin.module.scss";
 import { getSessionBusiness } from "../../session";
-import { chosenDay } from "../day";
+import { chosenDay, DAY_PARAM, panelHref } from "../day";
 import { DayNavigation } from "../day-navigation";
 import { ReservationList } from "../reservation-list";
 
@@ -39,6 +40,14 @@ async function DayReservations({
   return (
     <>
       <DayNavigation route={ROUTE} day={day} today={today} />
+      <div className={styles.headerActions}>
+        <Link
+          href={panelHref("/admin/reservas/nueva", { [DAY_PARAM]: day })}
+          className={styles.linkButton}
+        >
+          Nueva Reserva
+        </Link>
+      </div>
       {reservations.length === 0 ? (
         <p className={styles.notice}>No hay Reservas este día.</p>
       ) : (

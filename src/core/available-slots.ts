@@ -56,6 +56,26 @@ export async function getAvailableSlots(
     .map(({ startsAt, time }) => ({ startsAt, time }));
 }
 
+/** An Available slot as the Admin sees it: with the Professionals still free in it. */
+export type AvailableSlotWithProfessionals = AvailableSlot & {
+  freeProfessionals: Professional[];
+};
+
+/**
+ * The Available slots of `day`, like `getAvailableSlots`, each with its free
+ * Professionals (by name), so the Admin can choose one when entering a Reservation.
+ */
+export async function getAvailableSlotsWithProfessionals(
+  businessId: BusinessId,
+  day: string,
+  now: Date,
+): Promise<AvailableSlotWithProfessionals[]> {
+  const { blocks } = await getDayAvailability(businessId, day, now);
+  return blocks
+    .filter((block) => block.freeProfessionals.length > 0)
+    .map(({ startsAt, time, freeProfessionals }) => ({ startsAt, time, freeProfessionals }));
+}
+
 /**
  * A block of the Opening hours that the Reservation rules allow reserving, with the
  * active Professionals that have no Confirmed Reservation overlapping it.
@@ -65,15 +85,15 @@ export type Block = AvailableSlot & { endsAt: Date; freeProfessionals: Professio
 
 /**
  * Every block of `day` the Reservation rules allow reserving, full or not, plus the
- * Confirmed Reservations of that day. Used by the Available slots and by the creation
- * of a Reservation, so both decide with the same rules.
+ * Confirmed Reservations of that day and the active Professionals. Used by the Available
+ * slots and by the creation of a Reservation, so both decide with the same rules.
  */
 export async function getDayAvailability(
   businessId: BusinessId,
   day: string,
   now: Date,
-): Promise<{ blocks: Block[]; busyTimes: BusyTime[] }> {
-  if (!isCalendarDay(day)) return { blocks: [], busyTimes: [] };
+): Promise<{ blocks: Block[]; busyTimes: BusyTime[]; professionals: Professional[] }> {
+  if (!isCalendarDay(day)) return { blocks: [], busyTimes: [], professionals: [] };
 
   const [openingHours, rules, professionals, busyTimes] = await Promise.all([
     getOpeningHours(businessId),
@@ -86,7 +106,7 @@ export async function getDayAvailability(
     ),
   ]);
   const blocks = computeBlocks({ day, now, openingHours, rules, professionals, busyTimes });
-  return { blocks, busyTimes };
+  return { blocks, busyTimes, professionals };
 }
 
 /** The calculation itself, without reading the database. */

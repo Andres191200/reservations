@@ -29,7 +29,8 @@
   display: grid;
   gap: $space * 0.5;
 
-  input {
+  input,
+  select {
     padding: $space * 1.25 $space * 1.5;
     border: 1px solid $color-border;
     border-radius: $radius;
@@ -481,4 +482,90 @@
 .cancelledBadge {
   background: rgba($color-danger, 0.15);
   color: $color-danger;
+}
+
+// New Reservation (see reservas/nueva): the Available slots as a grid of choices.
+.slotChoices {
+  display: grid;
+  gap: $space;
+  margin: 0;
+  padding: 0;
+  border: 0;
+
+  legend {
+    margin-bottom: $space;
+    padding: 0;
+  }
+}
+
+.slotGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: $space;
+}
+
+.slotChoice {
+  position: relative;
+
+  // The radio stays in the page for keyboards and screen readers, under the visible box.
+  input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  span {
+    display: block;
+    padding: $space $space * 1.5;
+    border: 1px solid $color-border;
+    border-radius: $radius;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  input:hover + span {
+    border-color: $color-primary;
+  }
+
+  input:focus-visible + span {
+    @include focus-ring;
+  }
+
+  input:checked + span {
+    border-color: $color-primary;
+    background: rgba($color-primary, 0.15);
+    color: $color-primary;
+    font-weight: 600;
+  }
+}
+
+.enteredMessage {
+  display: grid;
+  gap: $space * 0.5;
+  padding: $space * 1.5 $space * 2;
+  border: 1px solid rgba($color-success, 0.4);
+  border-radius: $radius;
+  background: rgba($color-success, 0.08);
+}
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space * 2;
+}
+
+.linkButton {
+  padding: $space * 1.25 $space * 2;
+  border-radius: $radius;
+  background: $color-primary;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
 }

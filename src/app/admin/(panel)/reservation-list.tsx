@@ -56,11 +56,16 @@ function ReservationRow({
       <div className={styles.reservationCustomer}>
         <span className={styles.customerName}>{reservation.customerName}</span>
         <span className={styles.contact}>
-          <a href={`mailto:${reservation.customerEmail}`}>{reservation.customerEmail}</a>
+          {reservation.customerEmail && (
+            <a href={`mailto:${reservation.customerEmail}`}>{reservation.customerEmail}</a>
+          )}
           {reservation.customerPhone && (
             <a href={`tel:${reservation.customerPhone.replace(/[^0-9+]/g, "")}`}>
               {reservation.customerPhone}
             </a>
+          )}
+          {reservation.createdBy === "admin" && (
+            <span className={styles.muted}>Cargada desde el panel</span>
           )}
         </span>
       </div>
