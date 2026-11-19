@@ -3,6 +3,7 @@
 import { refresh } from "next/cache";
 import { cancelByBusiness } from "@/core/cancellations";
 import { reassign } from "@/core/reassignments";
+import { withUnexpectedErrors } from "@/lib/action-errors";
 import { emailSender } from "@/lib/email-sender";
 import { getSessionBusiness } from "../../session";
 
@@ -16,14 +17,16 @@ export async function cancelReservation(
   _previous: CancelReservationState,
   formData: FormData,
 ): Promise<CancelReservationState> {
-  const business = await getSessionBusiness();
-  const reservationId = String(formData.get("reservationId") ?? "");
+  return withUnexpectedErrors(async () => {
+    const business = await getSessionBusiness();
+    const reservationId = String(formData.get("reservationId") ?? "");
 
-  const result = await cancelByBusiness(business.id, reservationId, new Date(), emailSender);
-  // Even when rejected (the Customer cancelled it a moment ago), the list shows how the
-  // Reservation is now.
-  refresh();
-  return result.ok ? {} : { error: result.error };
+    const result = await cancelByBusiness(business.id, reservationId, new Date(), emailSender);
+    // Even when rejected (the Customer cancelled it a moment ago), the list shows how the
+    // Reservation is now.
+    refresh();
+    return result.ok ? {} : { error: result.error };
+  });
 }
 
 export type ReassignReservationState = { error?: string };
@@ -36,13 +39,15 @@ export async function reassignReservation(
   _previous: ReassignReservationState,
   formData: FormData,
 ): Promise<ReassignReservationState> {
-  const business = await getSessionBusiness();
-  const reservationId = String(formData.get("reservationId") ?? "");
-  const professionalId = String(formData.get("professionalId") ?? "");
+  return withUnexpectedErrors(async () => {
+    const business = await getSessionBusiness();
+    const reservationId = String(formData.get("reservationId") ?? "");
+    const professionalId = String(formData.get("professionalId") ?? "");
 
-  const result = await reassign(business.id, reservationId, professionalId);
-  // Even when rejected (the Professional was just taken), the list and the Professionals
-  // offered show how things are now.
-  refresh();
-  return result.ok ? {} : { error: result.error };
+    const result = await reassign(business.id, reservationId, professionalId);
+    // Even when rejected (the Professional was just taken), the list and the Professionals
+    // offered show how things are now.
+    refresh();
+    return result.ok ? {} : { error: result.error };
+  });
 }

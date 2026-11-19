@@ -7,6 +7,7 @@ import {
   type OpenDay,
 } from "@/core/business-configuration";
 import { WEEKDAYS } from "@/core/weekdays";
+import { withUnexpectedErrors } from "@/lib/action-errors";
 import { getSessionBusiness } from "../../session";
 
 /** One row of the Opening hours form, as the Admin left it. */
@@ -18,22 +19,24 @@ export async function saveOpeningHours(
   _previous: OpeningHoursState,
   formData: FormData,
 ): Promise<OpeningHoursState> {
-  // The Business always comes from the session, never from the form.
-  const business = await getSessionBusiness();
-
   const days: DayFields[] = WEEKDAYS.map(({ weekday }) => ({
     weekday,
     closed: formData.get(`closed-${weekday}`) === "on",
     opensAt: String(formData.get(`opensAt-${weekday}`) ?? ""),
     closesAt: String(formData.get(`closesAt-${weekday}`) ?? ""),
   }));
-  const openDays: OpenDay[] = days
-    .filter((day) => !day.closed)
-    .map(({ weekday, opensAt, closesAt }) => ({ weekday, opensAt, closesAt }));
 
-  const result = await saveOpeningHoursInCore(business.id, openDays);
-  if (!result.ok) return { error: result.error, days };
-  return { saved: true, days };
+  return withUnexpectedErrors(async () => {
+    // The Business always comes from the session, never from the form.
+    const business = await getSessionBusiness();
+    const openDays: OpenDay[] = days
+      .filter((day) => !day.closed)
+      .map(({ weekday, opensAt, closesAt }) => ({ weekday, opensAt, closesAt }));
+
+    const result = await saveOpeningHoursInCore(business.id, openDays);
+    if (!result.ok) return { error: result.error, days };
+    return { saved: true, days };
+  }, { days });
 }
 
 export type ReservationRulesFields = {
@@ -53,8 +56,6 @@ export async function saveReservationRules(
   _previous: ReservationRulesState,
   formData: FormData,
 ): Promise<ReservationRulesState> {
-  const business = await getSessionBusiness();
-
   const fields: ReservationRulesFields = {
     reservationDurationMinutes: String(formData.get("reservationDurationMinutes") ?? ""),
     minimumNoticeHours: String(formData.get("minimumNoticeHours") ?? ""),
@@ -62,9 +63,13 @@ export async function saveReservationRules(
     cancellationDeadlineHours: String(formData.get("cancellationDeadlineHours") ?? ""),
   };
 
-  const result = await saveReservationRulesInCore(business.id, fields, new Date());
-  if (!result.ok) return { error: result.error, fields };
-  // The page shows from when the new Reservation duration applies.
-  refresh();
-  return { saved: true, fields };
+  return withUnexpectedErrors(async () => {
+    const business = await getSessionBusiness();
+
+    const result = await saveReservationRulesInCore(business.id, fields, new Date());
+    if (!result.ok) return { error: result.error, fields };
+    // The page shows from when the new Reservation duration applies.
+    refresh();
+    return { saved: true, fields };
+  }, { fields });
 }

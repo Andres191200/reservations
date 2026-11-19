@@ -5,6 +5,7 @@ import { capitalize, formatDay } from "@/core/format";
 import { reserve, SLOT_TAKEN_ERROR } from "@/core/reservations";
 import { dayInTimeZone, timeInTimeZone } from "@/core/time-zone";
 import { findBusinessByPath } from "@/db/businesses";
+import { withUnexpectedErrors } from "@/lib/action-errors";
 import { clientIp } from "@/lib/client-ip";
 import { emailSender } from "@/lib/email-sender";
 import { createRateLimiter } from "@/lib/rate-limiter";
@@ -56,48 +57,50 @@ export async function reserveSlot(
     phone: String(formData.get("phone") ?? ""),
   };
 
-  const business = await findBusinessByPath(path);
-  if (!business) return { error: "Este Negocio no existe.", fields };
+  return withUnexpectedErrors(async () => {
+    const business = await findBusinessByPath(path);
+    if (!business) return { error: "Este Negocio no existe.", fields };
 
-  const ip = clientIp(await headers());
-  const turnstileToken = String(formData.get(TURNSTILE_TOKEN_FIELD) ?? "");
-  if (!(await verifyTurnstileToken(turnstileToken, ip))) {
-    return { error: TURNSTILE_FAILED_ERROR, fields };
-  }
+    const ip = clientIp(await headers());
+    const turnstileToken = String(formData.get(TURNSTILE_TOKEN_FIELD) ?? "");
+    if (!(await verifyTurnstileToken(turnstileToken, ip))) {
+      return { error: TURNSTILE_FAILED_ERROR, fields };
+    }
 
-  const now = new Date();
-  // Behind the proxy there is always an IP; if not, those requests share one limit.
-  const rateLimit = reservationsPerIp.take(ip ?? "unknown", now);
-  if (!rateLimit.allowed) {
-    return { error: rateLimitError(rateLimit.retryAt, now), fields };
-  }
+    const now = new Date();
+    // Behind the proxy there is always an IP; if not, those requests share one limit.
+    const rateLimit = reservationsPerIp.take(ip ?? "unknown", now);
+    if (!rateLimit.allowed) {
+      return { error: rateLimitError(rateLimit.retryAt, now), fields };
+    }
 
-  const result = await reserve(
-    business.id,
-    {
-      startsAt,
-      customerName: fields.name,
-      customerEmail: fields.email,
-      customerPhone: fields.phone,
-    },
-    now,
-    emailSender,
-  ).catch((error: unknown) => {
-    rateLimit.release();
-    throw error;
-  });
-  if (!result.ok) {
-    rateLimit.release();
-    return { error: result.error, slotTaken: result.error === SLOT_TAKEN_ERROR, fields };
-  }
+    const result = await reserve(
+      business.id,
+      {
+        startsAt,
+        customerName: fields.name,
+        customerEmail: fields.email,
+        customerPhone: fields.phone,
+      },
+      now,
+      emailSender,
+    ).catch((error: unknown) => {
+      rateLimit.release();
+      throw error;
+    });
+    if (!result.ok) {
+      rateLimit.release();
+      return { error: result.error, slotTaken: result.error === SLOT_TAKEN_ERROR, fields };
+    }
 
-  const reservedAt = result.value.startsAt;
-  return {
-    confirmed: {
-      day: capitalize(formatDay(dayInTimeZone(reservedAt))),
-      time: timeInTimeZone(reservedAt),
-    },
-  };
+    const reservedAt = result.value.startsAt;
+    return {
+      confirmed: {
+        day: capitalize(formatDay(dayInTimeZone(reservedAt))),
+        time: timeInTimeZone(reservedAt),
+      },
+    };
+  }, { fields });
 }
 
 function rateLimitError(retryAt: Date, now: Date): string {

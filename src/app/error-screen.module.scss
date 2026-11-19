@@ -1,0 +1,62 @@
+@use "abstracts" as *;
+
+.screen {
+  @include card;
+  display: grid;
+  gap: $space * 2;
+  width: 100%;
+  max-width: 560px;
+  padding: $space * 3 $space * 2;
+
+  @include up(sm) {
+    padding: $space * 4;
+  }
+}
+
+.title {
+  font-size: clamp(1.25rem, 5vw, 1.75rem);
+  line-height: 1.25;
+}
+
+.message {
+  color: $color-muted;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space;
+}
+
+.retry,
+.home {
+  padding: $space * 1.25 $space * 2;
+  border-radius: $radius;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.retry {
+  border: 0;
+  background: $color-primary;
+  color: $color-on-primary;
+}
+
+.home {
+  border: 1px solid $color-border;
+  color: $color-text;
+}
+
+// A whole page whose only content is the error, centered.
+.page {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: $space * 3 $space * 2;
+}

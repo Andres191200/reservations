@@ -229,3 +229,8 @@
     cursor: wait;
   }
 }
+
+// An error screen has no header: it starts below the theme toggle.
+.errorPage {
+  padding-top: $space * 8;
+}
