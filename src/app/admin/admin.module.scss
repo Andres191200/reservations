@@ -45,7 +45,7 @@
   border: 0;
   border-radius: $radius;
   background: $color-primary;
-  color: #fff;
+  color: $color-on-primary;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -131,6 +131,12 @@
 .nav a.conflictsLink {
   color: $color-danger;
   font-weight: 600;
+}
+
+.topBarEnd {
+  display: flex;
+  align-items: center;
+  gap: $space;
 }
 
 .topBarStart {
@@ -400,7 +406,7 @@
 
     &[aria-current="page"] {
       border-color: $color-primary;
-      background: rgba($color-primary, 0.15);
+      background: tint($color-primary, 15%);
       color: $color-primary;
       font-weight: 600;
     }
@@ -499,12 +505,12 @@
 }
 
 .confirmedBadge {
-  background: rgba($color-success, 0.15);
+  background: tint($color-success, 15%);
   color: $color-success;
 }
 
 .cancelledBadge {
-  background: rgba($color-danger, 0.15);
+  background: tint($color-danger, 15%);
   color: $color-danger;
 }
 
@@ -558,7 +564,7 @@
 
   input:checked + span {
     border-color: $color-primary;
-    background: rgba($color-primary, 0.15);
+    background: tint($color-primary, 15%);
     color: $color-primary;
     font-weight: 600;
   }
@@ -568,9 +574,9 @@
   display: grid;
   gap: $space * 0.5;
   padding: $space * 1.5 $space * 2;
-  border: 1px solid rgba($color-success, 0.4);
+  border: 1px solid tint($color-success, 40%);
   border-radius: $radius;
-  background: rgba($color-success, 0.08);
+  background: tint($color-success, 8%);
 }
 
 .headerActions {
@@ -585,7 +591,7 @@
   padding: $space * 1.25 $space * 2;
   border-radius: $radius;
   background: $color-primary;
-  color: #fff;
+  color: $color-on-primary;
   font-weight: 600;
   text-decoration: none;
 

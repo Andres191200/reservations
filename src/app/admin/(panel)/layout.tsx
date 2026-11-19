@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { getConflictingReservations } from "@/core/conflicts";
+import { ThemeToggle } from "../../theme-toggle";
 import { signOut } from "../actions";
 import styles from "../admin.module.scss";
 import { getSessionBusiness } from "../session";
@@ -26,11 +27,14 @@ export default function PanelLayout({ children }: LayoutProps<"/admin">) {
             </Suspense>
           </nav>
         </div>
-        <form action={signOut}>
-          <button type="submit" className={styles.secondaryButton}>
-            Cerrar sesión
-          </button>
-        </form>
+        <div className={styles.topBarEnd}>
+          <ThemeToggle />
+          <form action={signOut}>
+            <button type="submit" className={styles.secondaryButton}>
+              Cerrar sesión
+            </button>
+          </form>
+        </div>
       </header>
       <main className={styles.content}>{children}</main>
     </>

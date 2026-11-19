@@ -17,3 +17,8 @@
   border: 1px solid $color-border;
   border-radius: $radius;
 }
+
+/** A translucent version of a theme color, e.g. for a badge background. */
+@function tint($color, $opacity) {
+  @return color-mix(in srgb, #{$color} #{$opacity}, transparent);
+}

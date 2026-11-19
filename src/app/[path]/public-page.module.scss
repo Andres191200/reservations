@@ -20,6 +20,8 @@
 .header {
   display: grid;
   gap: $space * 0.5;
+  // Room for the theme toggle, fixed in the top right corner.
+  padding-right: $space * 5;
 
   h1 {
     font-size: clamp(1.5rem, 6vw, 2.25rem);
@@ -139,7 +141,7 @@
   border: 0;
   border-radius: $radius;
   background: $color-primary;
-  color: #fff;
+  color: $color-on-primary;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -186,12 +188,12 @@
 }
 
 .confirmed {
-  background: rgba($color-success, 0.15);
+  background: tint($color-success, 15%);
   color: $color-success;
 }
 
 .cancelled {
-  background: rgba($color-danger, 0.15);
+  background: tint($color-danger, 15%);
   color: $color-danger;
 }
 

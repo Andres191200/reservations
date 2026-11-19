@@ -1,12 +1,14 @@
-// Design tokens
-$color-bg: #0b0d12;
-$color-surface: #151924;
-$color-border: #262c3a;
-$color-text: #e6e8ee;
-$color-muted: #8b93a7;
-$color-primary: #6d8cff;
-$color-danger: #ff6b6b;
-$color-success: #4cd4a0;
+// Design tokens. Colors are CSS variables, so they follow the theme (light or dark):
+// both palettes live in globals.scss.
+$color-bg: var(--color-bg);
+$color-surface: var(--color-surface);
+$color-border: var(--color-border);
+$color-text: var(--color-text);
+$color-muted: var(--color-muted);
+$color-primary: var(--color-primary);
+$color-on-primary: var(--color-on-primary);
+$color-danger: var(--color-danger);
+$color-success: var(--color-success);
 
 $radius: 10px;
 $space: 8px;
