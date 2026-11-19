@@ -4,6 +4,7 @@ import { APIError } from "better-auth/api";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { withUnexpectedErrors } from "@/lib/action-errors";
 import { auth } from "@/lib/auth";
 import { LOGIN_ROUTE } from "./session";
 
@@ -16,23 +17,25 @@ const signInSchema = z.object({
 
 export async function signIn(_previous: SignInState, formData: FormData): Promise<SignInState> {
   const email = String(formData.get("email") ?? "");
-  const parsed = signInSchema.safeParse({ email, password: formData.get("password") ?? "" });
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0].message, email };
-  }
-
-  try {
-    await auth.api.signInEmail({
-      body: { email: parsed.data.email, password: parsed.data.password },
-      headers: await headers(),
-    });
-  } catch (error) {
-    if (error instanceof APIError) {
-      return { error: "Email o contraseña incorrectos.", email };
+  return withUnexpectedErrors(async () => {
+    const parsed = signInSchema.safeParse({ email, password: formData.get("password") ?? "" });
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0].message, email };
     }
-    throw error;
-  }
-  redirect("/admin");
+
+    try {
+      await auth.api.signInEmail({
+        body: { email: parsed.data.email, password: parsed.data.password },
+        headers: await headers(),
+      });
+    } catch (error) {
+      if (error instanceof APIError) {
+        return { error: "Email o contraseña incorrectos.", email };
+      }
+      throw error;
+    }
+    redirect("/admin");
+  }, { email });
 }
 
 export async function signOut(): Promise<void> {

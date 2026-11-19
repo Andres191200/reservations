@@ -12,6 +12,7 @@ import {
   addProfessional as addProfessionalInCore,
   deactivateProfessional as deactivateProfessionalInCore,
 } from "@/core/professionals";
+import { withUnexpectedErrors } from "@/lib/action-errors";
 import { getSessionBusiness } from "../../session";
 
 export type AddProfessionalState = { error?: string; added?: string; name?: string };
@@ -20,15 +21,17 @@ export async function addProfessional(
   _previous: AddProfessionalState,
   formData: FormData,
 ): Promise<AddProfessionalState> {
-  // The Business always comes from the session, never from the form.
-  const business = await getSessionBusiness();
   const name = String(formData.get("name") ?? "");
+  return withUnexpectedErrors(async () => {
+    // The Business always comes from the session, never from the form.
+    const business = await getSessionBusiness();
 
-  const result = await addProfessionalInCore(business.id, { name });
-  if (!result.ok) return { error: result.error, name };
+    const result = await addProfessionalInCore(business.id, { name });
+    if (!result.ok) return { error: result.error, name };
 
-  refresh();
-  return { added: result.value.name, name: "" };
+    refresh();
+    return { added: result.value.name, name: "" };
+  }, { name });
 }
 
 export type DeactivateProfessionalState = { error?: string };
@@ -37,20 +40,22 @@ export async function deactivateProfessional(
   _previous: DeactivateProfessionalState,
   formData: FormData,
 ): Promise<DeactivateProfessionalState> {
-  const business = await getSessionBusiness();
-  const professionalId = String(formData.get("professionalId") ?? "");
+  return withUnexpectedErrors(async () => {
+    const business = await getSessionBusiness();
+    const professionalId = String(formData.get("professionalId") ?? "");
 
-  const result = await deactivateProfessionalInCore(business.id, professionalId);
-  if (!result.ok) return { error: result.error };
+    const result = await deactivateProfessionalInCore(business.id, professionalId);
+    if (!result.ok) return { error: result.error };
 
-  // Its Confirmed Reservations from today on become Conflicting reservations: show them
-  // right away, so the Admin reassigns or cancels them.
-  const conflicts = await getConflictingReservations(business.id, new Date());
-  if (conflicts.some((reservation) => reservation.professional.id === professionalId)) {
-    redirect("/admin/conflictos");
-  }
-  refresh();
-  return {};
+    // Its Confirmed Reservations from today on become Conflicting reservations: show them
+    // right away, so the Admin reassigns or cancels them.
+    const conflicts = await getConflictingReservations(business.id, new Date());
+    if (conflicts.some((reservation) => reservation.professional.id === professionalId)) {
+      redirect("/admin/conflictos");
+    }
+    refresh();
+    return {};
+  });
 }
 
 export type AddAbsenceState = {
@@ -63,27 +68,29 @@ export async function addAbsence(
   _previous: AddAbsenceState,
   formData: FormData,
 ): Promise<AddAbsenceState> {
-  const business = await getSessionBusiness();
-  const result = await addAbsenceInCore(
-    business.id,
-    {
-      professionalId: String(formData.get("professionalId") ?? ""),
-      startsOn: String(formData.get("startsOn") ?? ""),
-      endsOn: String(formData.get("endsOn") ?? ""),
-    },
-    new Date(),
-  );
-  if (!result.ok) return { error: result.error };
+  return withUnexpectedErrors(async () => {
+    const business = await getSessionBusiness();
+    const result = await addAbsenceInCore(
+      business.id,
+      {
+        professionalId: String(formData.get("professionalId") ?? ""),
+        startsOn: String(formData.get("startsOn") ?? ""),
+        endsOn: String(formData.get("endsOn") ?? ""),
+      },
+      new Date(),
+    );
+    if (!result.ok) return { error: result.error };
 
-  refresh();
-  const { absence, conflicts } = result.value;
-  return {
-    added: {
-      professionalName: absence.professional.name,
-      days: absenceDaysText(absence),
-      conflicts: conflicts.length,
-    },
-  };
+    refresh();
+    const { absence, conflicts } = result.value;
+    return {
+      added: {
+        professionalName: absence.professional.name,
+        days: absenceDaysText(absence),
+        conflicts: conflicts.length,
+      },
+    };
+  });
 }
 
 export type RemoveAbsenceState = { error?: string };
@@ -92,8 +99,10 @@ export async function removeAbsence(
   _previous: RemoveAbsenceState,
   formData: FormData,
 ): Promise<RemoveAbsenceState> {
-  const business = await getSessionBusiness();
-  const result = await removeAbsenceInCore(business.id, String(formData.get("absenceId") ?? ""));
-  refresh();
-  return result.ok ? {} : { error: result.error };
+  return withUnexpectedErrors(async () => {
+    const business = await getSessionBusiness();
+    const result = await removeAbsenceInCore(business.id, String(formData.get("absenceId") ?? ""));
+    refresh();
+    return result.ok ? {} : { error: result.error };
+  });
 }

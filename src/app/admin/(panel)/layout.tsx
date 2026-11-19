@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { unstable_rethrow } from "next/navigation";
 import { getConflictingReservations } from "@/core/conflicts";
 import { ThemeToggle } from "../../theme-toggle";
 import { signOut } from "../actions";
@@ -42,18 +43,34 @@ export default function PanelLayout({ children }: LayoutProps<"/admin">) {
 }
 
 async function BusinessName() {
-  const business = await getSessionBusiness();
-  return <span className={styles.businessName}>{business.name}</span>;
+  let name: string;
+  try {
+    name = (await getSessionBusiness()).name;
+  } catch (error) {
+    // The frame stays standing: the page below shows the error.
+    unstable_rethrow(error);
+    console.error("No se pudo cargar el nombre del Negocio en el panel:", error);
+    return null;
+  }
+  return <span className={styles.businessName}>{name}</span>;
 }
 
 /** Shown only while there are Conflicting reservations to resolve. */
 async function ConflictsLink() {
-  const business = await getSessionBusiness();
-  const conflicts = await getConflictingReservations(business.id, new Date());
-  if (conflicts.length === 0) return null;
+  let count: number;
+  try {
+    const business = await getSessionBusiness();
+    count = (await getConflictingReservations(business.id, new Date())).length;
+  } catch (error) {
+    // The frame stays standing: the page below shows the error.
+    unstable_rethrow(error);
+    console.error("No se pudieron contar las Reservas en conflicto:", error);
+    return null;
+  }
+  if (count === 0) return null;
   return (
     <Link href="/admin/conflictos" className={styles.conflictsLink}>
-      Reservas en conflicto ({conflicts.length})
+      Reservas en conflicto ({count})
     </Link>
   );
 }
