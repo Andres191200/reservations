@@ -1,5 +1,6 @@
 "use server";
 
+import { refresh } from "next/cache";
 import {
   saveOpeningHours as saveOpeningHoursInCore,
   saveReservationRules as saveReservationRulesInCore,
@@ -61,7 +62,9 @@ export async function saveReservationRules(
     cancellationDeadlineHours: String(formData.get("cancellationDeadlineHours") ?? ""),
   };
 
-  const result = await saveReservationRulesInCore(business.id, fields);
+  const result = await saveReservationRulesInCore(business.id, fields, new Date());
   if (!result.ok) return { error: result.error, fields };
+  // The page shows from when the new Reservation duration applies.
+  refresh();
   return { saved: true, fields };
 }

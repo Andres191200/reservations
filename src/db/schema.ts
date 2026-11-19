@@ -34,6 +34,7 @@ export const businesses = pgTable("businesses", {
    * Reservation duration. A single value for now; issue #18 turns it into a value
    * with the date it takes effect from.
    */
+  /** Reservation duration until its first change (see `reservationDurationChanges`). */
   reservationDurationMinutes: integer().notNull().default(30),
   minimumNoticeHours: integer().notNull().default(1),
   maximumNoticeDays: integer().notNull().default(30),
@@ -61,6 +62,29 @@ export const openingHours = pgTable(
     primaryKey({ columns: [table.businessId, table.weekday] }),
     check("opening_hours_weekday_range", sql`${table.weekday} BETWEEN 1 AND 7`),
     check("opening_hours_closes_after_opens", sql`${table.closesAt} > ${table.opensAt}`),
+  ],
+);
+
+/**
+ * Changes of the Reservation duration, each with the day from which it applies. A day
+ * uses the last change that started on or before it; before the first change, the
+ * Business's `reservationDurationMinutes`. Existing Reservations keep their start and end.
+ */
+export const reservationDurationChanges = pgTable(
+  "reservation_duration_changes",
+  {
+    businessId: uuid()
+      .$type<BusinessId>()
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    /** "YYYY-MM-DD": first day, in Argentina, that uses `minutes`. */
+    effectiveFrom: date({ mode: "string" }).notNull(),
+    minutes: integer().notNull(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.businessId, table.effectiveFrom] }),
+    check("reservation_duration_changes_minutes_range", sql`${table.minutes} BETWEEN 5 AND 720`),
   ],
 );
 

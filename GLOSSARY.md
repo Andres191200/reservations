@@ -35,7 +35,7 @@ Franja continua en la que el Negocio atiende cada día de la semana (o ninguna, 
 _Avoid_: Horario del profesional, disponibilidad / Schedule, Availability
 
 **Duración de Reserva** · _en_: **Reservation duration**:
-Tiempo que ocupa cada Reserva, único por Negocio. Divide el Horario de atención en bloques consecutivos desde la apertura.
+Tiempo que ocupa cada Reserva, único por Negocio. Divide el Horario de atención en bloques consecutivos desde la apertura. Un cambio rige desde el día siguiente: los Horarios disponibles de hoy y las Reservas ya hechas no cambian.
 _Avoid_: Duración del turno, slot / Slot length, Appointment length
 
 **Antelación mínima** · _en_: **Minimum notice**:

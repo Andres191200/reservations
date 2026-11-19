@@ -13,7 +13,7 @@ const FIELDS: { name: keyof ReservationRulesFields; label: string; hint: string;
   {
     name: "reservationDurationMinutes",
     label: "Duración de Reserva (minutos)",
-    hint: "Tiempo que ocupa cada Reserva. Divide el Horario de atención en bloques desde la apertura.",
+    hint: "Tiempo que ocupa cada Reserva. Divide el Horario de atención en bloques desde la apertura. Un cambio rige desde mañana: los Horarios de hoy y las Reservas ya hechas no cambian.",
     min: 5,
   },
   {

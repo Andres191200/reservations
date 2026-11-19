@@ -2,7 +2,12 @@ import type { OpenDay, ReservationRules } from "@/db/business-configuration";
 import { listBusyTimes, type BusyTime } from "@/db/reservations";
 import type { BusinessId } from "@/db/schema";
 import { getAbsentProfessionals } from "./absences";
-import { getOpeningHours, getReservationRules } from "./business-configuration";
+import {
+  durationOn,
+  getOpeningHours,
+  getReservationDurations,
+  getReservationRules,
+} from "./business-configuration";
 import { isClosed } from "./closures";
 import { getActiveProfessionals, type Professional } from "./professionals";
 import {
@@ -104,10 +109,11 @@ export async function getDayAvailability(
 }> {
   if (!isCalendarDay(day)) return { blocks: [], busyTimes: [], professionals: [], absent: [] };
 
-  const [closed, openingHours, rules, active, absentOn, busyTimes] = await Promise.all([
+  const [closed, openingHours, rules, durations, active, absentOn, busyTimes] = await Promise.all([
     isClosed(businessId, day),
     getOpeningHours(businessId),
     getReservationRules(businessId),
+    getReservationDurations(businessId),
     getActiveProfessionals(businessId),
     getAbsentProfessionals(businessId, day),
     listBusyTimes(
@@ -122,7 +128,15 @@ export async function getDayAvailability(
   const absent = active.filter((professional) => absentIds.has(professional.id));
   const blocks = closed
     ? []
-    : computeBlocks({ day, now, openingHours, rules, professionals, busyTimes });
+    : computeBlocks({
+        day,
+        now,
+        openingHours,
+        rules,
+        durationMinutes: durationOn(durations, day),
+        professionals,
+        busyTimes,
+      });
   return { blocks, busyTimes, professionals, absent };
 }
 
@@ -132,10 +146,12 @@ function computeBlocks(input: {
   now: Date;
   openingHours: OpenDay[];
   rules: ReservationRules;
+  /** The Reservation duration in effect on `day`. */
+  durationMinutes: number;
   professionals: Professional[];
   busyTimes: BusyTime[];
 }): Block[] {
-  const { day, now, openingHours, rules, professionals, busyTimes } = input;
+  const { day, now, openingHours, rules, durationMinutes, professionals, busyTimes } = input;
 
   const { first, last } = getReservableDays(rules, now);
   if (day < first || day > last) return [];
@@ -147,9 +163,9 @@ function computeBlocks(input: {
   if (professionals.length === 0) return [];
 
   const earliestStart = now.getTime() + rules.minimumNoticeHours * HOUR_MS;
-  const durationMs = rules.reservationDurationMinutes * MINUTE_MS;
+  const durationMs = durationMinutes * MINUTE_MS;
 
-  return blockStarts(openDay, rules.reservationDurationMinutes)
+  return blockStarts(openDay, durationMinutes)
     .map((time) => instantInTimeZone(day, time))
     .filter((startsAt) => startsAt.getTime() >= earliestStart)
     .map((startsAt) => {

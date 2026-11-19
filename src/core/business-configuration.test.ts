@@ -9,6 +9,9 @@ import {
 import { registerBusiness } from "./businesses";
 
 // Runs against the real Postgres (`reservas_test` database), emptied before each test.
+// The clock is simulated: `now` is Tuesday 10 November 2026, at noon in Argentina.
+
+const now = new Date("2026-11-10T15:00:00Z");
 
 async function register(path = "don-pepe") {
   const result = await registerBusiness({ name: path, path, adminEmail: `admin@${path}.com` });
@@ -145,7 +148,7 @@ describe("Reservation rules", () => {
   it("saves the Reservation duration, the notices and the cancellation deadline", async () => {
     const businessId = await register();
 
-    const result = await saveReservationRules(businessId, validRules);
+    const result = await saveReservationRules(businessId, validRules, now);
 
     expect(result).toEqual({ ok: true, value: validRules });
     expect(await getReservationRules(businessId)).toEqual(validRules);
@@ -159,7 +162,7 @@ describe("Reservation rules", () => {
       minimumNoticeHours: "0",
       maximumNoticeDays: "7",
       cancellationDeadlineHours: "0",
-    });
+    }, now);
 
     expect(result.ok).toBe(true);
     expect(await getReservationRules(businessId)).toEqual({
@@ -182,7 +185,7 @@ describe("Reservation rules", () => {
   ])("rejects %s, without changing what was saved", async (_case, change) => {
     const businessId = await register();
 
-    const result = await saveReservationRules(businessId, { ...validRules, ...change });
+    const result = await saveReservationRules(businessId, { ...validRules, ...change }, now);
 
     expect(result.ok).toBe(false);
     expect(await getReservationRules(businessId)).toMatchObject({ reservationDurationMinutes: 30 });
@@ -191,7 +194,11 @@ describe("Reservation rules", () => {
   it("explains an empty field instead of saving a zero", async () => {
     const businessId = await register();
 
-    const result = await saveReservationRules(businessId, { ...validRules, minimumNoticeHours: " " });
+    const result = await saveReservationRules(
+      businessId,
+      { ...validRules, minimumNoticeHours: " " },
+      now,
+    );
 
     expect(result).toEqual({ ok: false, error: "Completá la antelación mínima." });
   });
@@ -214,7 +221,7 @@ describe("Isolation between Businesses", () => {
     const a = await register("negocio-a");
     const b = await register("negocio-b");
 
-    await saveReservationRules(a, validRules);
+    await saveReservationRules(a, validRules, now);
 
     expect(await getReservationRules(a)).toEqual(validRules);
     expect(await getReservationRules(b)).toMatchObject({ reservationDurationMinutes: 30 });
