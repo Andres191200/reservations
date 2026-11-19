@@ -1,0 +1,10 @@
+# Caddy: the reverse proxy. It is the only service that faces the internet. It gets
+# HTTPS certificates by itself (Let's Encrypt; with DOMAIN=localhost, a local one) and
+# passes each request to the app.
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Caddy replaces any X-Forwarded-For the client sends with the client's real IP, which
+	# the app reads (src/lib/client-ip.ts) for the rate limit.
+	reverse_proxy app:3000
+}
