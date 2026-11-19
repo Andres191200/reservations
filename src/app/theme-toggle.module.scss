@@ -1,0 +1,56 @@
+@use "abstracts" as *;
+
+.toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid $color-border;
+  border-radius: $radius;
+  background: $color-surface;
+  color: $color-text;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $color-primary;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+// On the public pages, which have no top bar: fixed in the top right corner.
+.floating {
+  position: fixed;
+  top: $space * 1.5;
+  right: $space * 1.5;
+  z-index: 1;
+}
+
+// The icon shows the theme it switches to: the sun in dark, the moon in light.
+.toDark {
+  display: none;
+}
+
+@mixin show-moon {
+  .toLight {
+    display: none;
+  }
+
+  .toDark {
+    display: inline;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :global(:root:not([data-theme="dark"])) {
+    @include show-moon;
+  }
+}
+
+:global(:root[data-theme="light"]) {
+  @include show-moon;
+}

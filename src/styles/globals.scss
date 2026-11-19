@@ -8,8 +8,46 @@
   padding: 0;
 }
 
-html {
+// Palettes. Without a saved choice, the browser's preference decides; the theme toggle
+// saves a choice in `data-theme` on <html> (set before paint by the script in layout.tsx).
+@mixin dark-palette {
+  --color-bg: #0b0d12;
+  --color-surface: #151924;
+  --color-border: #262c3a;
+  --color-text: #e6e8ee;
+  --color-muted: #8b93a7;
+  --color-primary: #6d8cff;
+  --color-on-primary: #ffffff;
+  --color-danger: #ff6b6b;
+  --color-success: #4cd4a0;
   color-scheme: dark;
+}
+
+@mixin light-palette {
+  --color-bg: #f5f6fa;
+  --color-surface: #ffffff;
+  --color-border: #d9dde7;
+  --color-text: #161a24;
+  --color-muted: #5b6375;
+  --color-primary: #3858d6;
+  --color-on-primary: #ffffff;
+  --color-danger: #c62f2f;
+  --color-success: #12805a;
+  color-scheme: light;
+}
+
+:root {
+  @include dark-palette;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    @include light-palette;
+  }
+}
+
+:root[data-theme="light"] {
+  @include light-palette;
 }
 
 body {
