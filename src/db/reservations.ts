@@ -46,13 +46,17 @@ export type CustomerReservation = StoredReservation & {
   cancelledBy: CancelledBy | null;
 };
 
-const customerReservationColumns = {
+const storedReservationColumns = {
   id: reservations.id,
   professionalId: reservations.professionalId,
   startsAt: reservations.startsAt,
   endsAt: reservations.endsAt,
   status: reservations.status,
   cancellationToken: reservations.cancellationToken,
+};
+
+const customerReservationColumns = {
+  ...storedReservationColumns,
   customerName: reservations.customerName,
   customerEmail: reservations.customerEmail,
   cancelledBy: reservations.cancelledBy,
@@ -79,18 +83,18 @@ export async function findReservationByToken(
 }
 
 /**
- * The Status of the Reservation with that id, only if it belongs to the Business: an id
- * of another Business's Reservation finds nothing.
+ * The Reservation with that id, only if it belongs to the Business: an id of another
+ * Business's Reservation finds nothing.
  */
-export async function findReservationStatus(
+export async function findReservation(
   businessId: BusinessId,
   reservationId: ReservationId,
-): Promise<ReservationStatus | undefined> {
+): Promise<StoredReservation | undefined> {
   const [reservation] = await db
-    .select({ status: reservations.status })
+    .select(storedReservationColumns)
     .from(reservations)
     .where(and(eq(reservations.businessId, businessId), eq(reservations.id, reservationId)));
-  return reservation?.status;
+  return reservation;
 }
 
 /**
@@ -204,9 +208,9 @@ export async function listBusyTimes(
 }
 
 /**
- * Two simultaneous inserts that overlap can each wait for the other inside the exclusion
+ * Two simultaneous writes that overlap can each wait for the other inside the exclusion
  * constraint, and Postgres then aborts one with "deadlock detected" instead of an
- * exclusion violation. The aborted insert left nothing behind, and by the time it is
+ * exclusion violation. The aborted write left nothing behind, and by the time it is
  * retried the other one has finished, so the retry gets a definite answer.
  */
 const DEADLOCK_ATTEMPTS = 3;
@@ -219,20 +223,55 @@ const DEADLOCK_ATTEMPTS = 3;
 export async function insertReservation(
   reservation: NewReservation,
 ): Promise<StoredReservation | undefined> {
+  return unlessOverlapping(async () => {
+    const [stored] = await db
+      .insert(reservations)
+      .values({ ...reservation, status: "confirmed" })
+      .returning(storedReservationColumns);
+    return stored;
+  });
+}
+
+/**
+ * Reassignment: moves a Confirmed Reservation of the Business to another Professional,
+ * keeping its time. The database has the last word on whether that Professional is free
+ * (exclusion constraint). Returns:
+ * - `"reassigned"` when it moved;
+ * - `"busy"` when that Professional has a Confirmed Reservation that overlaps;
+ * - `"not-confirmed"` when there was no Confirmed Reservation of the Business with that
+ *   id (it was Cancelled in the meantime, or never was of this Business).
+ */
+export async function reassignReservation(
+  businessId: BusinessId,
+  reservationId: ReservationId,
+  professionalId: ProfessionalId,
+): Promise<"reassigned" | "busy" | "not-confirmed"> {
+  const updated = await unlessOverlapping(() =>
+    db
+      .update(reservations)
+      .set({ professionalId })
+      .where(
+        and(
+          eq(reservations.businessId, businessId),
+          eq(reservations.id, reservationId),
+          eq(reservations.status, "confirmed"),
+        ),
+      )
+      .returning({ id: reservations.id }),
+  );
+  if (!updated) return "busy";
+  return updated.length > 0 ? "reassigned" : "not-confirmed";
+}
+
+/**
+ * Runs a write that may put two Confirmed Reservations of the same Professional on top of
+ * each other. Returns `undefined`, instead of throwing, when the exclusion constraint
+ * rejects it.
+ */
+async function unlessOverlapping<T>(write: () => Promise<T>): Promise<T | undefined> {
   for (let attempt = 1; ; attempt++) {
     try {
-      const [stored] = await db
-        .insert(reservations)
-        .values({ ...reservation, status: "confirmed" })
-        .returning({
-          id: reservations.id,
-          professionalId: reservations.professionalId,
-          startsAt: reservations.startsAt,
-          endsAt: reservations.endsAt,
-          status: reservations.status,
-          cancellationToken: reservations.cancellationToken,
-        });
-      return stored;
+      return await write();
     } catch (error) {
       const code = postgresErrorCode(error);
       // 23P01: exclusion_violation. Only ours means "taken"; any other is a bug.

@@ -303,6 +303,11 @@
   font-size: 1.25rem;
 }
 
+.modalForm {
+  display: grid;
+  gap: $space * 2;
+}
+
 .modalActions {
   display: flex;
   flex-wrap: wrap;

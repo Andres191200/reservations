@@ -3,7 +3,7 @@ import { getBusiness } from "@/db/businesses";
 import {
   cancelReservation,
   findReservationByToken,
-  findReservationStatus,
+  findReservation,
   type CustomerReservation,
 } from "@/db/reservations";
 import type { BusinessId, CancelledBy, ReservationId, ReservationStatus } from "@/db/schema";
@@ -119,8 +119,8 @@ export async function cancelByBusiness(
   if (!cancelled) {
     // Nothing was cancelled: either it is not a Reservation of this Business, or it was
     // already Cancelled (maybe a moment ago, by the Customer or from another tab).
-    const status = await findReservationStatus(businessId, id);
-    return { ok: false, error: status ? ALREADY_CANCELLED_ERROR : RESERVATION_NOT_FOUND_ERROR };
+    const found = await findReservation(businessId, id);
+    return { ok: false, error: found ? ALREADY_CANCELLED_ERROR : RESERVATION_NOT_FOUND_ERROR };
   }
 
   await sendCancellationEmail(emailSender, businessId, cancelled, "business");

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { getDayReservations } from "@/core/agenda";
+import { getReassignmentOptions } from "@/core/reassignments";
 import { dayInTimeZone } from "@/core/time-zone";
 import styles from "../../admin.module.scss";
 import { getSessionBusiness } from "../../session";
@@ -36,6 +37,7 @@ async function DayReservations({
   const today = dayInTimeZone(new Date());
   const day = chosenDay(query, today);
   const reservations = await getDayReservations(business.id, day);
+  const reassignmentOptions = await getReassignmentOptions(business.id, reservations);
 
   return (
     <>
@@ -51,7 +53,11 @@ async function DayReservations({
       {reservations.length === 0 ? (
         <p className={styles.notice}>No hay Reservas este día.</p>
       ) : (
-        <ReservationList reservations={reservations} day={day} />
+        <ReservationList
+          reservations={reservations}
+          reassignmentOptions={reassignmentOptions}
+          day={day}
+        />
       )}
     </>
   );
