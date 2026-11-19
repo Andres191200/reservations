@@ -1,0 +1,61 @@
+# Production: what runs on the server, and what can be tried locally the same way.
+#   docker compose -f compose.prod.yml --env-file .env.production up -d --build
+# See docs/produccion.md.
+name: reservas
+
+services:
+  # The app, built from the Dockerfile. Not reachable from outside: only Caddy talks to it.
+  app:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Reservas}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+    image: reservas-app
+    env_file: .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  # The database. Its data lives in a volume, so it survives restarts and new images. It
+  # publishes no port: only the app reaches it, through Docker's internal network.
+  postgres:
+    image: postgres:17
+    env_file: .env.production
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # The reverse proxy: the only service with published ports (HTTP and HTTPS).
+  caddy:
+    image: caddy:2.10
+    env_file: .env.production
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates: keeping them avoids asking Let's Encrypt again on every restart.
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

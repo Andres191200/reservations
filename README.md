@@ -104,6 +104,8 @@ npm run admin:reset-password -- --email admin@donpepe.com
 
 El path es la URL de la página pública (`app.com/don-pepe`): solo minúsculas, números y guiones, y no puede ser una palabra reservada (`admin`, `api`, `reserva`, `reservas`; la lista está en [src/core/path.ts](src/core/path.ts)) ni un path ya usado.
 
+En producción, los mismos comandos (y las migraciones) se corren dentro de la imagen: ver [docs/produccion.md](docs/produccion.md#comandos-de-operación).
+
 ## Panel y multitenancy
 
 - El login del Administrador es con Better Auth ([src/lib/auth.ts](src/lib/auth.ts)): email y contraseña, sesiones guardadas en la tabla `sessions` y una cookie httpOnly. El registro público está desactivado.
@@ -118,6 +120,12 @@ npm run lint        # ESLint
 npm run typecheck   # genera los tipos de rutas de Next.js y corre tsc
 npm run build       # build de producción
 ```
+
+## Producción
+
+La app se empaqueta en una imagen de Docker ([Dockerfile](Dockerfile)) y se levanta con [compose.prod.yml](compose.prod.yml): la app, Postgres y Caddy (el reverse proxy, que maneja HTTPS). Se puede probar en tu máquina exactamente como corre en el servidor. Qué es cada pieza y cómo se usa: [docs/produccion.md](docs/produccion.md).
+
+`/api/health` responde `{"status":"ok"}` si la app arrancó y llega a la base, y `503` si no.
 
 ## CI
 

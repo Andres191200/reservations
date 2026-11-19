@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:commands": "esbuild src/commands/migrate.ts src/commands/register-business.ts src/commands/reset-admin-password.ts --bundle --platform=node --target=node24 --format=cjs --outdir=dist/commands --out-extension:.js=.cjs --log-level=warning",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
@@ -12,6 +13,7 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:migrate:app": "tsx src/commands/migrate.ts",
     "business:register": "tsx src/commands/register-business.ts",
     "admin:reset-password": "tsx src/commands/reset-admin-password.ts"
   },
@@ -33,6 +35,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "drizzle-kit": "^0.31.11",
+    "esbuild": "0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
     "sass": "^1.107.1",

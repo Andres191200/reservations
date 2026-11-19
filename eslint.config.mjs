@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // The operation commands bundled for the production image (npm run build:commands).
+    "dist/**",
   ]),
 ]);
 
