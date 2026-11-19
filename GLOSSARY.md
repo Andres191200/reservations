@@ -97,7 +97,7 @@ Email que recibe el Cliente cuando se crea su Reserva, con el Negocio, el día, 
 _Avoid_: Comprobante, notificación, aviso / Receipt, Notification
 
 **Email de cancelación** · _en_: **Cancellation email**:
-Email que recibe el Cliente cuando cancela su Reserva, con el Negocio, el día, el horario y un link a la página pública para reservar otro. Si no se puede enviar, la Cancelación queda hecha igual.
+Email que recibe el Cliente cuando se cancela su Reserva, la cancele él o el Negocio, con el Negocio, el día, el horario y un link a la página pública para reservar otro. Si la canceló el Negocio, el email lo dice. Si no se puede enviar, la Cancelación queda hecha igual. Si la Reserva no tiene email, no se envía.
 _Avoid_: Comprobante, notificación, aviso / Receipt, Notification
 
 **Link de cancelación** · _en_: **Cancellation link**:

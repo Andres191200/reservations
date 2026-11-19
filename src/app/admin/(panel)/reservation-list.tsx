@@ -1,9 +1,15 @@
 import Link from "next/link";
 import type { AdminReservation } from "@/core/agenda";
-import { RESERVATION_STATUS_LABEL } from "@/core/format";
-import { timeInTimeZone, TIME_ZONE_LABEL, type CalendarDay } from "@/core/time-zone";
+import { capitalize, formatDay, RESERVATION_STATUS_LABEL } from "@/core/format";
+import {
+  dayInTimeZone,
+  timeInTimeZone,
+  TIME_ZONE_LABEL,
+  type CalendarDay,
+} from "@/core/time-zone";
 import type { CancelledBy } from "@/db/schema";
 import styles from "../admin.module.scss";
+import { CancelReservationButton } from "./cancel-reservation-button";
 import { DAY_PARAM, panelHref, PROFESSIONAL_PARAM } from "./day";
 
 const CANCELLED_BY_LABEL: Record<CancelledBy, string> = {
@@ -13,7 +19,8 @@ const CANCELLED_BY_LABEL: Record<CancelledBy, string> = {
 
 /**
  * Reservations of a day, in the order received. Confirmed and Cancelled ones look
- * different, so the Cancelled are not counted by mistake. With `day`, the name of each
+ * different, so the Cancelled are not counted by mistake; only a Confirmed one can be
+ * cancelled from here. With `day`, the name of each
  * Professional links to their Agenda that day; without it, the Professional is not shown
  * (inside an Agenda, it is always the same one).
  */
@@ -84,6 +91,15 @@ function ReservationRow({
           {RESERVATION_STATUS_LABEL[status]}
           {cancelled && cancelledBy && ` ${CANCELLED_BY_LABEL[cancelledBy]}`}
         </span>
+        {!cancelled && (
+          <CancelReservationButton
+            reservationId={reservation.id}
+            customerName={reservation.customerName}
+            customerEmail={reservation.customerEmail}
+            when={`${capitalize(formatDay(dayInTimeZone(startsAt)))}, ${timeInTimeZone(startsAt)} (${TIME_ZONE_LABEL})`}
+            professionalName={professional.name}
+          />
+        )}
       </div>
     </li>
   );

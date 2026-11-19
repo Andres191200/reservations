@@ -36,7 +36,10 @@ export type StoredReservation = {
   cancellationToken: string;
 };
 
-/** A Reservation as the Customer sees it through their Cancellation link. */
+/**
+ * A Reservation as the Customer sees it through their Cancellation link, and as the
+ * cancellation email needs it.
+ */
 export type CustomerReservation = StoredReservation & {
   customerName: string;
   customerEmail: string | null;
@@ -73,6 +76,21 @@ export async function findReservationByToken(
       ),
     );
   return reservation;
+}
+
+/**
+ * The Status of the Reservation with that id, only if it belongs to the Business: an id
+ * of another Business's Reservation finds nothing.
+ */
+export async function findReservationStatus(
+  businessId: BusinessId,
+  reservationId: ReservationId,
+): Promise<ReservationStatus | undefined> {
+  const [reservation] = await db
+    .select({ status: reservations.status })
+    .from(reservations)
+    .where(and(eq(reservations.businessId, businessId), eq(reservations.id, reservationId)));
+  return reservation?.status;
 }
 
 /**

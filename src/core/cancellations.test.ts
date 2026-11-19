@@ -7,12 +7,13 @@ import { setUpBusiness, theDayBefore, WEDNESDAY } from "@/test/set-up-business";
 import { getAvailableSlots } from "./available-slots";
 import {
   ALREADY_CANCELLED_ERROR,
+  cancelByBusiness,
   cancelByCustomer,
   getReservationForCustomer,
   PAST_CANCELLATION_DEADLINE_ERROR,
   RESERVATION_NOT_FOUND_ERROR,
 } from "./cancellations";
-import { reserve } from "./reservations";
+import { reserve, reserveByAdmin } from "./reservations";
 
 // Runs against the real Postgres (`reservas_test` database), emptied before each test.
 // The clock (`now`) and the EmailSender are always simulated. The Business is open on
@@ -24,6 +25,8 @@ const AT_0900 = "2026-11-11T12:00:00.000Z";
 /** 07:00 in Argentina on the Wednesday: exactly 2 hours before the 09:00 Reservation. */
 const atTheDeadline = new Date("2026-11-11T10:00:00Z");
 const oneMinuteLate = new Date("2026-11-11T10:01:00Z");
+/** 09:30 in Argentina on the Wednesday: the 09:00 Reservation already started. */
+const duringTheReservation = new Date("2026-11-11T12:30:00Z");
 
 /** A Confirmed Reservation at 09:00 on the Wednesday, made the day before. */
 async function reserveAt0900(businessId: BusinessId) {
@@ -240,6 +243,135 @@ describe("Cancellation by the Customer", () => {
   });
 });
 
+describe("Cancellation by the Business", () => {
+  it("cancels a Confirmed Reservation and records that the Business did it", async () => {
+    const { businessId } = await setUpBusiness();
+    const { id } = await reserveAt0900(businessId);
+
+    const result = await cancelByBusiness(businessId, id, theDayBefore, fakeEmailSender());
+
+    expect(result).toEqual({ ok: true, value: undefined });
+    expect(await stored(id)).toMatchObject({
+      status: "cancelled",
+      cancelledBy: "business",
+      cancelledAt: theDayBefore,
+    });
+  });
+
+  it.each([
+    ["past the Cancellation deadline", oneMinuteLate],
+    ["once the Reservation has started", duringTheReservation],
+  ])("has no Cancellation deadline: it cancels %s", async (_case, now) => {
+    const { businessId } = await setUpBusiness();
+    const { id } = await reserveAt0900(businessId);
+
+    const result = await cancelByBusiness(businessId, id, now, fakeEmailSender());
+
+    expect(result.ok).toBe(true);
+    expect(await stored(id)).toMatchObject({ status: "cancelled", cancelledBy: "business" });
+  });
+
+  it("turns its time back into an Available slot", async () => {
+    const { businessId } = await setUpBusiness();
+    const { id } = await reserveAt0900(businessId);
+
+    await cancelByBusiness(businessId, id, theDayBefore, fakeEmailSender());
+
+    const after = await getAvailableSlots(businessId, WEDNESDAY, theDayBefore);
+    expect(after.map((slot) => slot.time)).toEqual(["09:00", "10:00", "11:00"]);
+  });
+
+  it.each([
+    ["by the Customer", "customer"],
+    ["by the Business", "business"],
+  ] as const)(
+    "a Reservation Cancelled %s cannot be cancelled again",
+    async (_case, firstCancelledBy) => {
+      const { businessId } = await setUpBusiness();
+      const emails = fakeEmailSender();
+      const { id, cancellationToken } = await reserveAt0900(businessId);
+      if (firstCancelledBy === "customer") {
+        await cancelByCustomer(businessId, cancellationToken, theDayBefore, emails);
+      } else {
+        await cancelByBusiness(businessId, id, theDayBefore, emails);
+      }
+
+      const again = await cancelByBusiness(businessId, id, atTheDeadline, emails);
+
+      expect(again).toEqual({ ok: false, error: ALREADY_CANCELLED_ERROR });
+      // The first Cancellation is untouched, and only one email went out.
+      expect(await stored(id)).toMatchObject({
+        status: "cancelled",
+        cancelledBy: firstCancelledBy,
+        cancelledAt: theDayBefore,
+      });
+      expect(emails.sent).toHaveLength(1);
+    },
+  );
+
+  it("cannot cancel a Reservation of another Business", async () => {
+    const { businessId } = await setUpBusiness();
+    const other = await setUpBusiness({ path: "otro" });
+    const emails = fakeEmailSender();
+    const { id } = await reserveAt0900(other.businessId);
+
+    const result = await cancelByBusiness(businessId, id, theDayBefore, emails);
+
+    expect(result).toEqual({ ok: false, error: RESERVATION_NOT_FOUND_ERROR });
+    expect(await stored(id)).toMatchObject({
+      status: "confirmed",
+      cancelledBy: null,
+      cancelledAt: null,
+    });
+    expect(emails.sent).toEqual([]);
+  });
+
+  it("does not tell another Business that its Reservation was already Cancelled", async () => {
+    const { businessId } = await setUpBusiness();
+    const other = await setUpBusiness({ path: "otro" });
+    const { id } = await reserveAt0900(other.businessId);
+    await cancelByBusiness(other.businessId, id, theDayBefore, fakeEmailSender());
+
+    const result = await cancelByBusiness(businessId, id, theDayBefore, fakeEmailSender());
+
+    expect(result).toEqual({ ok: false, error: RESERVATION_NOT_FOUND_ERROR });
+  });
+
+  it.each([
+    ["an id that does not exist", "00000000-0000-4000-8000-000000000000"],
+    ["something that is not an id", "no-es-un-id"],
+    ["an empty id", ""],
+  ])("finds nothing to cancel for %s", async (_case, reservationId) => {
+    const { businessId } = await setUpBusiness();
+
+    const result = await cancelByBusiness(
+      businessId,
+      reservationId,
+      theDayBefore,
+      fakeEmailSender(),
+    );
+
+    expect(result).toEqual({ ok: false, error: RESERVATION_NOT_FOUND_ERROR });
+  });
+
+  it("of the Customer and the Business cancelling at once, only one goes through", async () => {
+    const { businessId } = await setUpBusiness();
+    const emails = fakeEmailSender();
+    const { id, cancellationToken } = await reserveAt0900(businessId);
+
+    const results = await Promise.all([
+      cancelByCustomer(businessId, cancellationToken, theDayBefore, emails),
+      cancelByBusiness(businessId, id, theDayBefore, emails),
+    ]);
+
+    expect(results.filter((result) => result.ok)).toHaveLength(1);
+    expect(results.filter((result) => !result.ok)).toEqual([
+      { ok: false, error: ALREADY_CANCELLED_ERROR },
+    ]);
+    expect(emails.sent).toHaveLength(1);
+  });
+});
+
 describe("Cancellation email", () => {
   it("tells the Customer the Business, day and time, with a link to reserve again", async () => {
     const { businessId } = await setUpBusiness();
@@ -263,6 +395,43 @@ describe("Cancellation email", () => {
     expect(email.html).toContain('href="http://localhost:3000/don-pepe"');
   });
 
+  it("when the Business cancelled it, says so", async () => {
+    const { businessId } = await setUpBusiness();
+    const emails = fakeEmailSender();
+    const { id } = await reserveAt0900(businessId);
+
+    await cancelByBusiness(businessId, id, theDayBefore, emails);
+
+    expect(emails.sent).toHaveLength(1);
+    const [email] = emails.sent;
+    expect(email).toMatchObject({
+      to: "ana@mail.com",
+      subject: "Reserva cancelada en Negocio don-pepe: Miércoles 11 de noviembre, 09:00",
+    });
+    expect(email.text).toContain("Negocio don-pepe canceló tu Reserva.");
+    expect(email.text).toContain("Horario: 09:00 (hora de Argentina)");
+    expect(email.text).toContain("http://localhost:3000/don-pepe");
+    expect(email.html).toContain("<strong>Negocio don-pepe</strong> canceló tu Reserva.");
+  });
+
+  it("is not sent when the Admin entered the Reservation without email", async () => {
+    const { businessId } = await setUpBusiness();
+    const emails = fakeEmailSender();
+    const entered = await reserveByAdmin(
+      businessId,
+      { startsAt: AT_0900, customerName: "Ana Pérez", customerPhone: "11 1234-5678" },
+      theDayBefore,
+      emails,
+    );
+    if (!entered.ok) throw new Error(entered.error);
+
+    const result = await cancelByBusiness(businessId, entered.value.id, theDayBefore, emails);
+
+    expect(result.ok).toBe(true);
+    expect(await stored(entered.value.id)).toMatchObject({ status: "cancelled" });
+    expect(emails.sent).toEqual([]);
+  });
+
   it("if sending fails, the Cancellation stays made and the error is logged", async () => {
     const { businessId } = await setUpBusiness();
     const { id, cancellationToken } = await reserveAt0900(businessId);
@@ -277,6 +446,27 @@ describe("Cancellation email", () => {
 
     expect(result.ok).toBe(true);
     expect(await stored(id)).toMatchObject({ status: "cancelled", cancelledBy: "customer" });
+    expect(logError).toHaveBeenCalledWith(
+      `No se pudo enviar el email de cancelación de la Reserva ${id}:`,
+      expect.objectContaining({ message: "Fallo simulado del proveedor de email" }),
+    );
+    logError.mockRestore();
+  });
+
+  it("if sending fails after the Business cancels, the Cancellation stays made and the error is logged", async () => {
+    const { businessId } = await setUpBusiness();
+    const { id } = await reserveAt0900(businessId);
+    const logError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await cancelByBusiness(
+      businessId,
+      id,
+      theDayBefore,
+      fakeEmailSender({ failing: true }),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(await stored(id)).toMatchObject({ status: "cancelled", cancelledBy: "business" });
     expect(logError).toHaveBeenCalledWith(
       `No se pudo enviar el email de cancelación de la Reserva ${id}:`,
       expect.objectContaining({ message: "Fallo simulado del proveedor de email" }),
