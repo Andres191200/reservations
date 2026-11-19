@@ -37,6 +37,16 @@ const envSchema = z.object({
     .string()
     .regex(/^[0-9]x[0-9A-Za-z_-]+$/, { error: "No parece una secret key de Turnstile (0x…)" })
     .optional(),
+  /**
+   * Sentry, where the server's and the browser's errors go. Optional: without it, nothing
+   * is reported. Public on purpose (the browser needs it), and read when building.
+   */
+  NEXT_PUBLIC_SENTRY_DSN: z
+    .url({
+      protocol: /^https?$/,
+      error: "Debe ser el DSN de Sentry (https://clave@o0.ingest.sentry.io/0)",
+    })
+    .optional(),
 });
 
 /**
@@ -98,6 +108,7 @@ const parsed = envWithRequirementsSchema.safeParse({
   MAILPIT_URL: process.env.MAILPIT_URL || undefined,
   TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY || undefined,
   TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY || undefined,
+  NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN || undefined,
 });
 
 if (!parsed.success) {

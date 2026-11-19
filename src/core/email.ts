@@ -1,3 +1,5 @@
+import { reportError } from "@/lib/error-reporting";
+
 /** An email the platform sends. Its texts are in Spanish: the Customer reads them. */
 export type Email = {
   to: string;
@@ -18,8 +20,8 @@ export type EmailSender = {
 
 /**
  * Sends an email that must never undo what already happened (a Reservation created, a
- * Cancellation made): if building or sending it fails, the error is only logged, with
- * `failureMessage`. There are no retries.
+ * Cancellation made): if building or sending it fails, the error is only logged and
+ * reported to Sentry, with `failureMessage`. There are no retries.
  */
 export async function sendWithoutFailing(
   emailSender: EmailSender,
@@ -29,6 +31,6 @@ export async function sendWithoutFailing(
   try {
     await emailSender.send(await buildEmail());
   } catch (error) {
-    console.error(failureMessage, error);
+    reportError(failureMessage, error);
   }
 }

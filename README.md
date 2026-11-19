@@ -34,7 +34,7 @@ La app manda el email de confirmación de cada Reserva, con el Link de cancelaci
 - `mailpit` (por defecto, desarrollo): los emails no salen de tu máquina; se ven en Mailpit.
 - `resend` (producción): se envían por [Resend](https://resend.com). Exige `RESEND_API_KEY` y `EMAIL_FROM`, una dirección de un dominio verificado en Resend.
 
-El link de los emails se arma con `BETTER_AUTH_URL`, la URL base de la app. Si un envío falla, la Reserva (o la Cancelación) queda hecha igual y el error se registra en los logs (sin reintentos).
+El link de los emails se arma con `BETTER_AUTH_URL`, la URL base de la app. Si un envío falla, la Reserva (o la Cancelación) queda hecha igual y el error se registra en los logs y en Sentry (sin reintentos).
 
 El núcleo no sabe de Resend ni de Mailpit: recibe el envío de emails desde afuera (`EmailSender`, en [src/core/email.ts](src/core/email.ts)), igual que el reloj. La app le pasa el real ([src/lib/email-sender.ts](src/lib/email-sender.ts)) y los tests un falso ([src/test/fake-email-sender.ts](src/test/fake-email-sender.ts)) que registra lo que se habría mandado y puede simular un fallo.
 
@@ -54,6 +54,16 @@ El formulario público de Reserva tiene dos protecciones, que aplica su server a
 - **Rate limit**: cada IP puede crear hasta 10 Reservas por hora (ventana deslizante); a partir de la número 11 se rechaza con un mensaje que dice en cuántos minutos puede volver a reservar. Solo cuentan las Reservas creadas: una rechazada (datos inválidos, horario ocupado) no consume el cupo. El conteo está en la memoria del servidor ([src/lib/rate-limiter.ts](src/lib/rate-limiter.ts)): alcanza con una sola instancia de la app y se reinicia al reiniciarla.
 
 La IP sale del último valor del encabezado `X-Forwarded-For` ([src/lib/client-ip.ts](src/lib/client-ip.ts)), que es el que agrega el reverse proxy; los valores a su izquierda los puede inventar el cliente. Por eso en producción la app tiene que estar detrás de **un** reverse proxy que agregue (o reemplace) ese encabezado, y no se tiene que poder llegar a ella sin pasar por él. Si hubiera otro proxy adelante (por ejemplo, el proxy de Cloudflare), el último valor sería la IP de ese proxy y todos los Clientes compartirían el límite: en ese caso hay que configurar el reverse proxy para que confíe en él y reenvíe la IP real.
+
+## Errores (Sentry)
+
+Los errores del servidor y del navegador se reportan a [Sentry](https://sentry.io) (plan gratuito, solo errores) si está `NEXT_PUBLIC_SENTRY_DSN`; sin ella (desarrollo, tests) no se reporta nada y los errores quedan solo en los logs. El DSN se lee al compilar, así que cambiarlo exige volver a compilar.
+
+- Servidor: [src/instrumentation.ts](src/instrumentation.ts) inicializa Sentry y le pasa los errores que nadie manejó (`onRequestError`).
+- Navegador: [src/instrumentation-client.ts](src/instrumentation-client.ts).
+- Errores manejados: los fallos de envío de email y los errores inesperados de las server actions pasan por `reportError` ([src/lib/error-reporting.ts](src/lib/error-reporting.ts)), que los registra en el log y los manda a Sentry.
+
+No se envían trazas de rendimiento, grabaciones de sesión ni datos personales: ni cookies, ni encabezados (llevan la IP), ni el cuerpo de los formularios, y a los errores de consultas se les quitan los parámetros (que pueden traer el nombre, el email o el teléfono de un Cliente). La configuración está en [src/lib/sentry.ts](src/lib/sentry.ts).
 
 ## Base de datos y migraciones
 

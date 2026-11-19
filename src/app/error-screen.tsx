@@ -1,13 +1,14 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
 import { useEffect } from "react";
 import styles from "./error-screen.module.scss";
 
 /**
  * What a person sees when a page fails: a clear message in Spanish and a way out, never
- * the technical details. The server already logged its own errors; errors of the browser
- * are logged here.
+ * the technical details. The server already logged (and reported) its own errors, which
+ * arrive here with a `digest`; errors of the browser are logged and reported here.
  */
 export function ErrorScreen({
   error,
@@ -25,6 +26,8 @@ export function ErrorScreen({
 }) {
   useEffect(() => {
     console.error(error);
+    const fromServer = typeof error === "object" && error !== null && "digest" in error;
+    if (!fromServer) Sentry.captureException(error);
   }, [error]);
 
   return (
