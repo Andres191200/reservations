@@ -57,6 +57,13 @@
       "when": 1795048714078,
       "tag": "0007_absences",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795049285795,
+      "tag": "0008_reservation-duration-changes",
+      "breakpoints": true
     }
   ]
 }

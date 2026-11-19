@@ -1,11 +1,17 @@
-import { eq } from "drizzle-orm";
+import { and, asc, eq, gte } from "drizzle-orm";
 import { db } from "./index";
-import { businesses, openingHours, type BusinessId } from "./schema";
+import {
+  businesses,
+  openingHours,
+  reservationDurationChanges,
+  type BusinessId,
+} from "./schema";
 
 /** Opening hours of one weekday. Times are "HH:MM", in Argentina time. */
 export type OpenDay = { weekday: number; opensAt: string; closesAt: string };
 
 export type ReservationRules = {
+  /** The Reservation duration until its first change. */
   reservationDurationMinutes: number;
   minimumNoticeHours: number;
   maximumNoticeDays: number;
@@ -58,9 +64,51 @@ export async function getReservationRules(
   return rules;
 }
 
+/** Saves the rules that apply right away: everything but the Reservation duration. */
 export async function updateReservationRules(
   businessId: BusinessId,
-  rules: ReservationRules,
+  rules: Omit<ReservationRules, "reservationDurationMinutes">,
 ): Promise<void> {
   await db.update(businesses).set(rules).where(eq(businesses.id, businessId));
+}
+
+/** A change of the Reservation duration: from `effectiveFrom` on, `minutes`. */
+export type ReservationDurationChange = { effectiveFrom: string; minutes: number };
+
+/** Every change of the Business's Reservation duration, by day. */
+export async function listReservationDurationChanges(
+  businessId: BusinessId,
+): Promise<ReservationDurationChange[]> {
+  return db
+    .select({
+      effectiveFrom: reservationDurationChanges.effectiveFrom,
+      minutes: reservationDurationChanges.minutes,
+    })
+    .from(reservationDurationChanges)
+    .where(eq(reservationDurationChanges.businessId, businessId))
+    .orderBy(asc(reservationDurationChanges.effectiveFrom));
+}
+
+/**
+ * Replaces the changes from `effectiveFrom` on with one of `minutes` (or with none, when
+ * `minutes` is null): the duration of those days goes back to the previous one.
+ */
+export async function replaceReservationDurationFrom(
+  businessId: BusinessId,
+  effectiveFrom: string,
+  minutes: number | null,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(reservationDurationChanges)
+      .where(
+        and(
+          eq(reservationDurationChanges.businessId, businessId),
+          gte(reservationDurationChanges.effectiveFrom, effectiveFrom),
+        ),
+      );
+    if (minutes !== null) {
+      await tx.insert(reservationDurationChanges).values({ businessId, effectiveFrom, minutes });
+    }
+  });
 }

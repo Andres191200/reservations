@@ -12,6 +12,12 @@ import { addProfessional, type Professional } from "@/core/professionals";
 export const WEDNESDAY = "2026-11-11";
 export const THURSDAY = "2026-11-12";
 
+/**
+ * When the tests' Businesses are configured: long before the days they use, so the
+ * Reservation duration, which applies from the next day, is already in effect.
+ */
+export const configuredAt = new Date("2026-01-01T15:00:00Z");
+
 /** The day before WEDNESDAY, at noon in Argentina: far from any notice. */
 export const theDayBefore = new Date("2026-11-10T15:00:00Z");
 
@@ -45,7 +51,11 @@ export async function setUpBusiness(
 
   const openDays = options.openDays ?? [{ weekday: 3, opensAt: "09:00", closesAt: "12:00" }];
   if (!(await saveOpeningHours(businessId, openDays)).ok) throw new Error("Opening hours");
-  const rules = await saveReservationRules(businessId, { ...defaultRules, ...options.rules });
+  const rules = await saveReservationRules(
+    businessId,
+    { ...defaultRules, ...options.rules },
+    configuredAt,
+  );
   if (!rules.ok) throw new Error(rules.error);
 
   const professionals: Professional[] = [];

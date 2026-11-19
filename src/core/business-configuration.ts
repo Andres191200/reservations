@@ -2,14 +2,18 @@ import { z } from "zod";
 import {
   getOpeningHours as getStoredOpeningHours,
   getReservationRules as getStoredReservationRules,
+  listReservationDurationChanges,
   replaceOpeningHours,
+  replaceReservationDurationFrom,
   updateReservationRules,
   type OpenDay,
+  type ReservationDurationChange,
   type ReservationRules,
 } from "@/db/business-configuration";
 import type { BusinessId } from "@/db/schema";
 import { capitalize } from "./format";
 import type { Result } from "./result";
+import { addDays, dayInTimeZone, type CalendarDay } from "./time-zone";
 import { weekdayName } from "./weekdays";
 
 export type { OpenDay, ReservationRules };
@@ -98,21 +102,92 @@ const reservationRulesSchema = z
 
 export type ReservationRulesInput = z.input<typeof reservationRulesSchema>;
 
+/**
+ * The Reservation rules as the Admin configured them. The Reservation duration is the
+ * last one saved, which may apply only from tomorrow on: to know the one of a given day,
+ * use `getReservationDurations` and `durationOn`.
+ */
 export async function getReservationRules(businessId: BusinessId): Promise<ReservationRules> {
-  const rules = await getStoredReservationRules(businessId);
+  const [rules, durations] = await Promise.all([
+    getStoredReservationRules(businessId),
+    listReservationDurationChanges(businessId),
+  ]);
   if (!rules) throw new Error(`No existe el Negocio ${businessId}.`);
-  return rules;
+  return { ...rules, reservationDurationMinutes: latest(durations) ?? rules.reservationDurationMinutes };
 }
 
-/** Saves the Reservation duration, the minimum and maximum notice and the cancellation deadline. */
+/** The Reservation duration of each day: the initial one, and its changes by day. */
+export type ReservationDurations = {
+  initialMinutes: number;
+  changes: ReservationDurationChange[];
+};
+
+export async function getReservationDurations(
+  businessId: BusinessId,
+): Promise<ReservationDurations> {
+  const [rules, changes] = await Promise.all([
+    getStoredReservationRules(businessId),
+    listReservationDurationChanges(businessId),
+  ]);
+  if (!rules) throw new Error(`No existe el Negocio ${businessId}.`);
+  return { initialMinutes: rules.reservationDurationMinutes, changes };
+}
+
+/** The Reservation duration in effect on `day`: the last change that started by then. */
+export function durationOn(durations: ReservationDurations, day: CalendarDay): number {
+  return latest(durations.changes.filter((change) => change.effectiveFrom <= day)) ??
+    durations.initialMinutes;
+}
+
+/** The Reservation duration of today and, if it changes, from which day and to what. */
+export type ReservationDurationSchedule = {
+  today: number;
+  upcoming?: { from: CalendarDay; minutes: number };
+};
+
+export async function getReservationDurationSchedule(
+  businessId: BusinessId,
+  now: Date,
+): Promise<ReservationDurationSchedule> {
+  const durations = await getReservationDurations(businessId);
+  const today = dayInTimeZone(now);
+  const minutes = durationOn(durations, today);
+  const upcoming = durations.changes.find(
+    (change) => change.effectiveFrom > today && change.minutes !== minutes,
+  );
+  return upcoming
+    ? { today: minutes, upcoming: { from: upcoming.effectiveFrom, minutes: upcoming.minutes } }
+    : { today: minutes };
+}
+
+function latest(changes: ReservationDurationChange[]): number | undefined {
+  return changes.at(-1)?.minutes;
+}
+
+/**
+ * Saves the Reservation rules. The minimum and maximum notice and the Cancellation
+ * deadline apply right away. A new Reservation duration applies from tomorrow (in
+ * Argentina) on: today's Available slots keep the previous one, and existing
+ * Reservations keep their start and end. `now` is the clock, received from outside.
+ */
 export async function saveReservationRules(
   businessId: BusinessId,
   input: ReservationRulesInput,
+  now: Date,
 ): Promise<Result<ReservationRules>> {
   const parsed = reservationRulesSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: errorMessage(parsed.error) };
+  const { reservationDurationMinutes: minutes, ...rest } = parsed.data;
 
-  await updateReservationRules(businessId, parsed.data);
+  const today = dayInTimeZone(now);
+  const durations = await getReservationDurations(businessId);
+  await updateReservationRules(businessId, rest);
+  // From tomorrow on, the new duration; or no change at all, if it is today's again.
+  await replaceReservationDurationFrom(
+    businessId,
+    addDays(today, 1),
+    minutes === durationOn(durations, today) ? null : minutes,
+  );
   return { ok: true, value: parsed.data };
 }
 

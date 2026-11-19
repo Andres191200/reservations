@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getOpeningHours, getReservationRules } from "@/core/business-configuration";
+import {
+  getOpeningHours,
+  getReservationDurationSchedule,
+  getReservationRules,
+} from "@/core/business-configuration";
+import { formatDay } from "@/core/format";
 import { TIME_ZONE_LABEL } from "@/core/time-zone";
 import { WEEKDAYS } from "@/core/weekdays";
 import styles from "../../admin.module.scss";
@@ -27,9 +32,10 @@ export default function ConfigurationPage() {
 
 async function Configuration() {
   const business = await getSessionBusiness();
-  const [openDays, rules] = await Promise.all([
+  const [openDays, rules, duration] = await Promise.all([
     getOpeningHours(business.id),
     getReservationRules(business.id),
+    getReservationDurationSchedule(business.id, new Date()),
   ]);
 
   const days: DayFields[] = WEEKDAYS.map(({ weekday }) => {
@@ -48,6 +54,12 @@ async function Configuration() {
       </section>
       <section className={styles.section}>
         <h2>Reglas de Reserva</h2>
+        {duration.upcoming && (
+          <p className={styles.notice} role="status">
+            Hoy rige una Duración de Reserva de {duration.today} minutos. Desde el{" "}
+            {formatDay(duration.upcoming.from)}, {duration.upcoming.minutes} minutos.
+          </p>
+        )}
         <ReservationRulesForm
           initialFields={{
             reservationDurationMinutes: String(rules.reservationDurationMinutes),
