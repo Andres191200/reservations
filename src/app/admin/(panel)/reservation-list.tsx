@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { AdminReservation } from "@/core/agenda";
+import type { Professional } from "@/core/professionals";
 import { capitalize, formatDay, RESERVATION_STATUS_LABEL } from "@/core/format";
 import {
   dayInTimeZone,
@@ -7,10 +8,11 @@ import {
   TIME_ZONE_LABEL,
   type CalendarDay,
 } from "@/core/time-zone";
-import type { CancelledBy } from "@/db/schema";
+import type { CancelledBy, ReservationId } from "@/db/schema";
 import styles from "../admin.module.scss";
 import { CancelReservationButton } from "./cancel-reservation-button";
 import { DAY_PARAM, panelHref, PROFESSIONAL_PARAM } from "./day";
+import { ReassignButton } from "./reassign-button";
 
 const CANCELLED_BY_LABEL: Record<CancelledBy, string> = {
   customer: "por el Cliente",
@@ -20,15 +22,18 @@ const CANCELLED_BY_LABEL: Record<CancelledBy, string> = {
 /**
  * Reservations of a day, in the order received. Confirmed and Cancelled ones look
  * different, so the Cancelled are not counted by mistake; only a Confirmed one can be
- * cancelled from here. With `day`, the name of each
+ * reassigned (to one of its `reassignmentOptions`) or cancelled from here. With `day`, the name of each
  * Professional links to their Agenda that day; without it, the Professional is not shown
  * (inside an Agenda, it is always the same one).
  */
 export function ReservationList({
   reservations,
+  reassignmentOptions,
   day,
 }: {
   reservations: AdminReservation[];
+  /** For each Confirmed Reservation, the Professionals it can be reassigned to. */
+  reassignmentOptions: Map<ReservationId, Professional[]>;
   day?: CalendarDay;
 }) {
   return (
@@ -36,7 +41,12 @@ export function ReservationList({
       <ReservationCount reservations={reservations} />
       <ul className={styles.reservations}>
         {reservations.map((reservation) => (
-          <ReservationRow key={reservation.id} reservation={reservation} day={day} />
+          <ReservationRow
+            key={reservation.id}
+            reservation={reservation}
+            reassignTo={reassignmentOptions.get(reservation.id) ?? []}
+            day={day}
+          />
         ))}
       </ul>
       <p className={styles.hint}>Horarios en {TIME_ZONE_LABEL}.</p>
@@ -46,13 +56,16 @@ export function ReservationList({
 
 function ReservationRow({
   reservation,
+  reassignTo,
   day,
 }: {
   reservation: AdminReservation;
+  reassignTo: Professional[];
   day?: CalendarDay;
 }) {
   const { startsAt, endsAt, status, cancelledBy, professional } = reservation;
   const cancelled = status === "cancelled";
+  const when = `${capitalize(formatDay(dayInTimeZone(startsAt)))}, ${timeInTimeZone(startsAt)} (${TIME_ZONE_LABEL})`;
 
   return (
     <li className={cancelled ? styles.cancelledReservation : styles.reservation}>
@@ -92,13 +105,22 @@ function ReservationRow({
           {cancelled && cancelledBy && ` ${CANCELLED_BY_LABEL[cancelledBy]}`}
         </span>
         {!cancelled && (
-          <CancelReservationButton
-            reservationId={reservation.id}
-            customerName={reservation.customerName}
-            customerEmail={reservation.customerEmail}
-            when={`${capitalize(formatDay(dayInTimeZone(startsAt)))}, ${timeInTimeZone(startsAt)} (${TIME_ZONE_LABEL})`}
-            professionalName={professional.name}
-          />
+          <>
+            <ReassignButton
+              reservationId={reservation.id}
+              customerName={reservation.customerName}
+              when={when}
+              professionalName={professional.name}
+              options={reassignTo}
+            />
+            <CancelReservationButton
+              reservationId={reservation.id}
+              customerName={reservation.customerName}
+              customerEmail={reservation.customerEmail}
+              when={when}
+              professionalName={professional.name}
+            />
+          </>
         )}
       </div>
     </li>

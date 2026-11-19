@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { getAgendas } from "@/core/agenda";
+import { getReassignmentOptions } from "@/core/reassignments";
 import { dayInTimeZone } from "@/core/time-zone";
 import styles from "../../admin.module.scss";
 import { getSessionBusiness } from "../../session";
@@ -51,6 +52,7 @@ async function ProfessionalAgenda({
   const requested = queryValue(query, PROFESSIONAL_PARAM);
   const selected = agendas.find((agenda) => agenda.professional.id === requested) ?? agendas[0];
   const { professional, reservations } = selected;
+  const reassignmentOptions = await getReassignmentOptions(business.id, reservations);
 
   return (
     <>
@@ -78,7 +80,7 @@ async function ProfessionalAgenda({
       {reservations.length === 0 ? (
         <p className={styles.notice}>{professional.name} no tiene Reservas este día.</p>
       ) : (
-        <ReservationList reservations={reservations} />
+        <ReservationList reservations={reservations} reassignmentOptions={reassignmentOptions} />
       )}
     </>
   );
