@@ -6,10 +6,15 @@ import {
   type AdminReservation,
 } from "@/db/reservations";
 import type { BusinessId, ProfessionalId, ReservationId } from "@/db/schema";
+import { getAbsentProfessionals, professionalAbsentError } from "./absences";
 import { RESERVATION_NOT_FOUND_ERROR } from "./cancellations";
-import { getActiveProfessionals, type Professional } from "./professionals";
-import { PROFESSIONAL_NOT_FOUND_ERROR } from "./reservations";
+import {
+  getActiveProfessionals,
+  PROFESSIONAL_NOT_FOUND_ERROR,
+  type Professional,
+} from "./professionals";
 import type { Result } from "./result";
+import { dayInTimeZone } from "./time-zone";
 
 export const CANCELLED_CANNOT_BE_REASSIGNED_ERROR = "Una Reserva Cancelada no se puede reasignar.";
 
@@ -24,8 +29,8 @@ export function busyForReassignmentError(name: string): string {
 
 /**
  * For each Confirmed Reservation of the list, the active Professionals it can be
- * reassigned to: every one but its own that has no Confirmed Reservation overlapping it.
- * Cancelled Reservations get none.
+ * reassigned to: every one but its own that is not Absent that day and has no Confirmed
+ * Reservation overlapping it. Cancelled Reservations get none.
  */
 export async function getReassignmentOptions(
   businessId: BusinessId,
@@ -37,9 +42,12 @@ export async function getReassignmentOptions(
 
   const starts = confirmed.map((reservation) => reservation.startsAt.getTime());
   const ends = confirmed.map((reservation) => reservation.endsAt.getTime());
-  const [active, busyTimes] = await Promise.all([
+  const from = new Date(Math.min(...starts));
+  const to = new Date(Math.max(...ends));
+  const [active, busyTimes, absentOn] = await Promise.all([
     getActiveProfessionals(businessId),
-    listBusyTimes(businessId, new Date(Math.min(...starts)), new Date(Math.max(...ends))),
+    listBusyTimes(businessId, from, to),
+    getAbsentProfessionals(businessId, dayInTimeZone(from), dayInTimeZone(to)),
   ]);
 
   for (const reservation of confirmed) {
@@ -48,11 +56,14 @@ export async function getReassignmentOptions(
         .filter((busyTime) => overlaps(busyTime, reservation))
         .map((busyTime) => busyTime.professionalId),
     );
+    const absent = absentOn(dayInTimeZone(reservation.startsAt));
     options.set(
       reservation.id,
       active.filter(
         (professional) =>
-          professional.id !== reservation.professional.id && !busy.has(professional.id),
+          professional.id !== reservation.professional.id &&
+          !busy.has(professional.id) &&
+          !absent.has(professional.id),
       ),
     );
   }
@@ -64,8 +75,8 @@ function overlaps(a: { startsAt: Date; endsAt: Date }, b: { startsAt: Date; ends
 }
 
 /**
- * Reassignment: the Admin moves a Confirmed Reservation to another active Professional
- * free at the same time. The time does not change and the Customer is not told: they
+ * Reassignment: the Admin moves a Confirmed Reservation to another active Professional,
+ * not Absent that day, free at the same time. The time does not change and the Customer is not told: they
  * never chose a Professional (ADR 0001). Both ids come from the panel, so they are
  * checked: they only work on a Reservation and a Professional of this Business.
  */
@@ -91,6 +102,10 @@ export async function reassign(
   if (!professional) return { ok: false, error: PROFESSIONAL_NOT_FOUND_ERROR };
   if (professional.id === reservation.professionalId) {
     return { ok: false, error: alreadyAssignedError(professional.name) };
+  }
+  const day = dayInTimeZone(reservation.startsAt);
+  if ((await getAbsentProfessionals(businessId, day))(day).has(professional.id)) {
+    return { ok: false, error: professionalAbsentError(professional.name) };
   }
 
   // The database has the last word: the Professional may have been taken, or the

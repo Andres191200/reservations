@@ -112,6 +112,37 @@ export const professionals = pgTable(
   ],
 );
 
+/** Id of an Absence, with its own type for the same reason as `BusinessId`. */
+export type AbsenceId = string & { readonly __absenceId: unique symbol };
+
+/**
+ * Absence: whole days, from `startsOn` to `endsOn` (both included), in which a
+ * Professional does not serve. Days are calendar days in Argentina, not instants.
+ */
+export const absences = pgTable(
+  "absences",
+  {
+    id: uuid().$type<AbsenceId>().primaryKey().defaultRandom(),
+    businessId: uuid()
+      .$type<BusinessId>()
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    professionalId: uuid()
+      .$type<ProfessionalId>()
+      .notNull()
+      .references(() => professionals.id),
+    /** "YYYY-MM-DD". */
+    startsOn: date({ mode: "string" }).notNull(),
+    /** "YYYY-MM-DD", included. */
+    endsOn: date({ mode: "string" }).notNull(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("absences_business_id_ends_on_idx").on(table.businessId, table.endsOn),
+    check("absences_ends_on_or_after_starts", sql`${table.endsOn} >= ${table.startsOn}`),
+  ],
+);
+
 /** Id of a Reservation, with its own type for the same reason as `BusinessId`. */
 export type ReservationId = string & { readonly __reservationId: unique symbol };
 

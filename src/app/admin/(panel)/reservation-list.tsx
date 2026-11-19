@@ -33,8 +33,8 @@ export function ReservationList({
 }: {
   reservations: AdminReservation[];
   /**
-   * For each Confirmed Reservation, the Professionals it can be reassigned to. Without
-   * it, Reservations cannot be reassigned from this list.
+   * For each Confirmed Reservation, the Professionals it can be reassigned to. Those
+   * without an entry cannot be reassigned from this list.
    */
   reassignmentOptions?: Map<ReservationId, Professional[]>;
   day?: CalendarDay;
@@ -47,7 +47,7 @@ export function ReservationList({
           <ReservationRow
             key={reservation.id}
             reservation={reservation}
-            reassignTo={reassignmentOptions && (reassignmentOptions.get(reservation.id) ?? [])}
+            reassignTo={reassignmentOptions?.get(reservation.id)}
             day={day}
           />
         ))}
@@ -107,6 +107,10 @@ function ReservationRow({
           {RESERVATION_STATUS_LABEL[status]}
           {cancelled && cancelledBy && ` ${CANCELLED_BY_LABEL[cancelledBy]}`}
         </span>
+        {/* A Conflicting reservation: Confirmed, but nobody will serve it. */}
+        {!cancelled && !professional.active && (
+          <span className={styles.cancelledBadge}>Profesional dado de baja · sin atender</span>
+        )}
         {!cancelled && (
           <>
             {reassignTo && (

@@ -50,6 +50,13 @@
       "when": 1795048317536,
       "tag": "0006_closures",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795048714078,
+      "tag": "0007_absences",
+      "breakpoints": true
     }
   ]
 }

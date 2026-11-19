@@ -27,7 +27,8 @@ export function DeactivateButton({ professionalId, name }: { professionalId: str
       <Modal open={open} onClose={close} title={`¿Dar de baja a ${name}?`}>
         <p className={styles.muted}>
           Va a dejar de recibir Reservas y no va a aparecer más en el listado. Las Reservas que
-          ya atendió se conservan.
+          ya atendió se conservan. Si tiene Reservas Confirmadas de hoy en adelante, quedan en
+          conflicto para que las reasignes o canceles.
         </p>
         <form action={action} className={styles.modalActions}>
           <input type="hidden" name="professionalId" value={professionalId} />

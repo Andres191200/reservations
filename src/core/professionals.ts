@@ -8,6 +8,9 @@ export type { Professional };
 
 const NAME_MAX_LENGTH = 100;
 
+/** Shown when the Admin chooses a Professional that is not active in the Business. */
+export const PROFESSIONAL_NOT_FOUND_ERROR = "Ese Profesional no existe o está dado de baja.";
+
 const newProfessionalSchema = z.object({
   name: z
     .string()

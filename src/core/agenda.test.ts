@@ -66,7 +66,7 @@ describe("The Reservations of a day", () => {
       customerEmail: "ana@mail.com",
       customerPhone: null,
       createdBy: "customer",
-      professional: first,
+      professional: { ...first, active: true },
     });
   });
 
@@ -102,9 +102,10 @@ describe("The Reservations of a day", () => {
     await reserveAt(businessId, AT_0900, "Ana");
     await deactivateProfessional(businessId, professionals[0].id);
 
-    expect(summary(await getDayReservations(businessId, WEDNESDAY))).toEqual([
-      `${AT_0900} Ana Profesional 1`,
-    ]);
+    const reservations = await getDayReservations(businessId, WEDNESDAY);
+
+    expect(summary(reservations)).toEqual([`${AT_0900} Ana Profesional 1`]);
+    expect(reservations[0].professional.active).toBe(false);
   });
 
   it.each([

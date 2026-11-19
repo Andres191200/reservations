@@ -1,10 +1,11 @@
 import { and, asc, eq, exists, gte, sql } from "drizzle-orm";
 import { db } from "./index";
-import { listAdminReservations, type AdminReservation } from "./reservations";
+import {
+  listAdminReservations,
+  reservationStartDay,
+  type AdminReservation,
+} from "./reservations";
 import { closures, reservations, type BusinessId, type ClosureId } from "./schema";
-
-/** Time zone of the Business's days, the same as src/core/time-zone.ts. */
-const TIME_ZONE = "America/Argentina/Buenos_Aires";
 
 export type Closure = { id: ClosureId; day: string };
 
@@ -63,7 +64,7 @@ export async function listConfirmedReservationsOnClosures(
   businessId: BusinessId,
   fromDay: string,
 ): Promise<AdminReservation[]> {
-  const startDay = sql`(${reservations.startsAt} AT TIME ZONE ${TIME_ZONE})::date`;
+  const startDay = reservationStartDay;
   return listAdminReservations(
     businessId,
     and(
