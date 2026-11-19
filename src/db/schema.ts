@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
   index,
   integer,
   pgEnum,
@@ -13,6 +14,7 @@ import {
   text,
   time,
   timestamp,
+  unique,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -60,6 +62,28 @@ export const openingHours = pgTable(
     check("opening_hours_weekday_range", sql`${table.weekday} BETWEEN 1 AND 7`),
     check("opening_hours_closes_after_opens", sql`${table.closesAt} > ${table.opensAt}`),
   ],
+);
+
+/** Id of a Closure, with its own type for the same reason as `BusinessId`. */
+export type ClosureId = string & { readonly __closureId: unique symbol };
+
+/**
+ * Closure: a specific day the Business does not open even though its Opening hours say
+ * otherwise (a holiday). The day is a calendar day in Argentina, not an instant.
+ */
+export const closures = pgTable(
+  "closures",
+  {
+    id: uuid().$type<ClosureId>().primaryKey().defaultRandom(),
+    businessId: uuid()
+      .$type<BusinessId>()
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    /** "YYYY-MM-DD". */
+    day: date({ mode: "string" }).notNull(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [unique("closures_business_id_day_unique").on(table.businessId, table.day)],
 );
 
 /** Id of a Professional, with its own type for the same reason as `BusinessId`. */

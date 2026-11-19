@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { getDayReservations } from "@/core/agenda";
+import { isClosed } from "@/core/closures";
 import { getReassignmentOptions } from "@/core/reassignments";
 import { dayInTimeZone } from "@/core/time-zone";
 import styles from "../../admin.module.scss";
@@ -36,12 +37,21 @@ async function DayReservations({
   const [business, query] = await Promise.all([getSessionBusiness(), searchParams]);
   const today = dayInTimeZone(new Date());
   const day = chosenDay(query, today);
-  const reservations = await getDayReservations(business.id, day);
+  const [reservations, closed] = await Promise.all([
+    getDayReservations(business.id, day),
+    isClosed(business.id, day),
+  ]);
   const reassignmentOptions = await getReassignmentOptions(business.id, reservations);
 
   return (
     <>
       <DayNavigation route={ROUTE} day={day} today={today} />
+      {closed && (
+        <p className={styles.notice}>
+          Este día tiene un Cierre: no se ofrecen Horarios disponibles.{" "}
+          <Link href="/admin/cierres">Ver Cierres</Link>
+        </p>
+      )}
       <div className={styles.headerActions}>
         <Link
           href={panelHref("/admin/reservas/nueva", { [DAY_PARAM]: day })}

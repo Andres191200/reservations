@@ -43,6 +43,13 @@
       "when": 1794764107317,
       "tag": "0005_admin-reservations",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795048317536,
+      "tag": "0006_closures",
+      "breakpoints": true
     }
   ]
 }
