@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, gte, lt } from "drizzle-orm";
+import { and, asc, eq, gt, gte, lt, type SQL } from "drizzle-orm";
 import { db } from "./index";
 import {
   professionals,
@@ -145,6 +145,20 @@ export async function listReservations(
   from: Date,
   to: Date,
 ): Promise<AdminReservation[]> {
+  return listAdminReservations(
+    businessId,
+    and(gte(reservations.startsAt, from), lt(reservations.startsAt, to)),
+  );
+}
+
+/**
+ * The Reservations of the Business that meet `condition`, as the Admin sees them, sorted
+ * by start and then by Professional name.
+ */
+export async function listAdminReservations(
+  businessId: BusinessId,
+  condition: SQL | undefined,
+): Promise<AdminReservation[]> {
   return db
     .select({
       id: reservations.id,
@@ -168,13 +182,7 @@ export async function listReservations(
         eq(professionals.businessId, businessId),
       ),
     )
-    .where(
-      and(
-        eq(reservations.businessId, businessId),
-        gte(reservations.startsAt, from),
-        lt(reservations.startsAt, to),
-      ),
-    )
+    .where(and(eq(reservations.businessId, businessId), condition))
     .orderBy(asc(reservations.startsAt), asc(professionals.name), asc(reservations.createdAt));
 }
 

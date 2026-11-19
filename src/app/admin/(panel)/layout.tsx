@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { getConflictingReservations } from "@/core/conflicts";
 import { signOut } from "../actions";
 import styles from "../admin.module.scss";
 import { getSessionBusiness } from "../session";
@@ -18,7 +19,11 @@ export default function PanelLayout({ children }: LayoutProps<"/admin">) {
             <Link href="/admin/reservas">Reservas</Link>
             <Link href="/admin/agenda">Agenda</Link>
             <Link href="/admin/profesionales">Profesionales</Link>
+            <Link href="/admin/cierres">Cierres</Link>
             <Link href="/admin/configuracion">Configuración</Link>
+            <Suspense fallback={null}>
+              <ConflictsLink />
+            </Suspense>
           </nav>
         </div>
         <form action={signOut}>
@@ -35,4 +40,16 @@ export default function PanelLayout({ children }: LayoutProps<"/admin">) {
 async function BusinessName() {
   const business = await getSessionBusiness();
   return <span className={styles.businessName}>{business.name}</span>;
+}
+
+/** Shown only while there are Conflicting reservations to resolve. */
+async function ConflictsLink() {
+  const business = await getSessionBusiness();
+  const conflicts = await getConflictingReservations(business.id, new Date());
+  if (conflicts.length === 0) return null;
+  return (
+    <Link href="/admin/conflictos" className={styles.conflictsLink}>
+      Reservas en conflicto ({conflicts.length})
+    </Link>
+  );
 }

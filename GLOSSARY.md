@@ -80,6 +80,10 @@ _Avoid_: Auto-asignación, distribución / Allocation, Distribution
 Cambio del Profesional asignado a una Reserva Confirmada, sin cambiar su horario. No es una Cancelación y no se notifica al Cliente.
 _Avoid_: Cambio de profesional, transferencia, mover / Transfer, Move
 
+**Reserva en conflicto** · _en_: **Conflicting reservation**:
+Reserva Confirmada que no se puede atender tal como está: cae en un día con Cierre o en una Ausencia de su Profesional, o su Profesional fue dado de Baja. Deja de estar en conflicto cuando el Administrador la reasigna a un Profesional que sí puede atenderla o la cancela.
+_Avoid_: Reserva huérfana, reserva bloqueada, choque / Orphan, Clash, Overlap
+
 **Agenda** · _en_: **Agenda**:
 Las Reservas de un Profesional, tal como las ve el Administrador. No es un horario propio del Profesional: todos comparten el Horario de atención.
 _Avoid_: Calendario, disponibilidad del profesional / Calendar, Schedule

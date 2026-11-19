@@ -32,8 +32,11 @@ export function ReservationList({
   day,
 }: {
   reservations: AdminReservation[];
-  /** For each Confirmed Reservation, the Professionals it can be reassigned to. */
-  reassignmentOptions: Map<ReservationId, Professional[]>;
+  /**
+   * For each Confirmed Reservation, the Professionals it can be reassigned to. Without
+   * it, Reservations cannot be reassigned from this list.
+   */
+  reassignmentOptions?: Map<ReservationId, Professional[]>;
   day?: CalendarDay;
 }) {
   return (
@@ -44,7 +47,7 @@ export function ReservationList({
           <ReservationRow
             key={reservation.id}
             reservation={reservation}
-            reassignTo={reassignmentOptions.get(reservation.id) ?? []}
+            reassignTo={reassignmentOptions && (reassignmentOptions.get(reservation.id) ?? [])}
             day={day}
           />
         ))}
@@ -60,7 +63,7 @@ function ReservationRow({
   day,
 }: {
   reservation: AdminReservation;
-  reassignTo: Professional[];
+  reassignTo?: Professional[];
   day?: CalendarDay;
 }) {
   const { startsAt, endsAt, status, cancelledBy, professional } = reservation;
@@ -106,13 +109,15 @@ function ReservationRow({
         </span>
         {!cancelled && (
           <>
-            <ReassignButton
-              reservationId={reservation.id}
-              customerName={reservation.customerName}
-              when={when}
-              professionalName={professional.name}
-              options={reassignTo}
-            />
+            {reassignTo && (
+              <ReassignButton
+                reservationId={reservation.id}
+                customerName={reservation.customerName}
+                when={when}
+                professionalName={professional.name}
+                options={reassignTo}
+              />
+            )}
             <CancelReservationButton
               reservationId={reservation.id}
               customerName={reservation.customerName}

@@ -2,6 +2,7 @@ import type { OpenDay, ReservationRules } from "@/db/business-configuration";
 import { listBusyTimes, type BusyTime } from "@/db/reservations";
 import type { BusinessId } from "@/db/schema";
 import { getOpeningHours, getReservationRules } from "./business-configuration";
+import { isClosed } from "./closures";
 import { getActiveProfessionals, type Professional } from "./professionals";
 import {
   addDays,
@@ -42,8 +43,8 @@ export function getReservableDays(
 /**
  * The Available slots of the Business on `day` (Argentina), computed at the moment from
  * the clock `now`: the blocks the Reservation rules allow reserving in which at least one
- * active Professional has no Confirmed Reservation. Closures and Absences are not
- * subtracted yet. A day outside the Reservable days, or not a valid day, has none.
+ * active Professional has no Confirmed Reservation. A day with a Closure, outside the
+ * Reservable days, or not a valid day, has none. Absences are not subtracted yet.
  */
 export async function getAvailableSlots(
   businessId: BusinessId,
@@ -84,7 +85,8 @@ export async function getAvailableSlotsWithProfessionals(
 export type Block = AvailableSlot & { endsAt: Date; freeProfessionals: Professional[] };
 
 /**
- * Every block of `day` the Reservation rules allow reserving, full or not, plus the
+ * Every block of `day` the Reservation rules allow reserving, full or not (none on a day
+ * with a Closure), plus the
  * Confirmed Reservations of that day and the active Professionals. Used by the Available
  * slots and by the creation of a Reservation, so both decide with the same rules.
  */
@@ -95,7 +97,8 @@ export async function getDayAvailability(
 ): Promise<{ blocks: Block[]; busyTimes: BusyTime[]; professionals: Professional[] }> {
   if (!isCalendarDay(day)) return { blocks: [], busyTimes: [], professionals: [] };
 
-  const [openingHours, rules, professionals, busyTimes] = await Promise.all([
+  const [closed, openingHours, rules, professionals, busyTimes] = await Promise.all([
+    isClosed(businessId, day),
     getOpeningHours(businessId),
     getReservationRules(businessId),
     getActiveProfessionals(businessId),
@@ -105,7 +108,9 @@ export async function getDayAvailability(
       instantInTimeZone(addDays(day, 1), "00:00"),
     ),
   ]);
-  const blocks = computeBlocks({ day, now, openingHours, rules, professionals, busyTimes });
+  const blocks = closed
+    ? []
+    : computeBlocks({ day, now, openingHours, rules, professionals, busyTimes });
   return { blocks, busyTimes, professionals };
 }
 
