@@ -308,6 +308,11 @@
   font-size: 1.25rem;
 }
 
+.conflictGroup {
+  display: grid;
+  gap: $space;
+}
+
 .inlineForm {
   display: flex;
   flex-wrap: wrap;
@@ -424,7 +429,9 @@
   }
 
   @include up(sm) {
-    grid-template-columns: 110px 1fr auto;
+    // The Customer keeps a minimum width: when space runs out, the badges and buttons
+    // wrap instead of squeezing the name.
+    grid-template-columns: 110px minmax(12rem, 1fr) auto;
     align-items: center;
   }
 }

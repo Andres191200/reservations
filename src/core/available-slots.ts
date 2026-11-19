@@ -1,6 +1,7 @@
 import type { OpenDay, ReservationRules } from "@/db/business-configuration";
 import { listBusyTimes, type BusyTime } from "@/db/reservations";
 import type { BusinessId } from "@/db/schema";
+import { getAbsentProfessionals } from "./absences";
 import { getOpeningHours, getReservationRules } from "./business-configuration";
 import { isClosed } from "./closures";
 import { getActiveProfessionals, type Professional } from "./professionals";
@@ -43,8 +44,8 @@ export function getReservableDays(
 /**
  * The Available slots of the Business on `day` (Argentina), computed at the moment from
  * the clock `now`: the blocks the Reservation rules allow reserving in which at least one
- * active Professional has no Confirmed Reservation. A day with a Closure, outside the
- * Reservable days, or not a valid day, has none. Absences are not subtracted yet.
+ * active Professional, not Absent that day, has no Confirmed Reservation. A day with a
+ * Closure, outside the Reservable days, or not a valid day, has none.
  */
 export async function getAvailableSlots(
   businessId: BusinessId,
@@ -79,39 +80,50 @@ export async function getAvailableSlotsWithProfessionals(
 
 /**
  * A block of the Opening hours that the Reservation rules allow reserving, with the
- * active Professionals that have no Confirmed Reservation overlapping it.
+ * active Professionals, not Absent that day, that have no Confirmed Reservation
+ * overlapping it.
  * When `freeProfessionals` is empty, the block is full: it is not an Available slot.
  */
 export type Block = AvailableSlot & { endsAt: Date; freeProfessionals: Professional[] };
 
 /**
  * Every block of `day` the Reservation rules allow reserving, full or not (none on a day
- * with a Closure), plus the
- * Confirmed Reservations of that day and the active Professionals. Used by the Available
- * slots and by the creation of a Reservation, so both decide with the same rules.
+ * with a Closure), plus the Confirmed Reservations of that day, the active Professionals
+ * that serve that day and those Absent that day. Used by the Available slots and by the
+ * creation of a Reservation, so both decide with the same rules.
  */
 export async function getDayAvailability(
   businessId: BusinessId,
   day: string,
   now: Date,
-): Promise<{ blocks: Block[]; busyTimes: BusyTime[]; professionals: Professional[] }> {
-  if (!isCalendarDay(day)) return { blocks: [], busyTimes: [], professionals: [] };
+): Promise<{
+  blocks: Block[];
+  busyTimes: BusyTime[];
+  professionals: Professional[];
+  absent: Professional[];
+}> {
+  if (!isCalendarDay(day)) return { blocks: [], busyTimes: [], professionals: [], absent: [] };
 
-  const [closed, openingHours, rules, professionals, busyTimes] = await Promise.all([
+  const [closed, openingHours, rules, active, absentOn, busyTimes] = await Promise.all([
     isClosed(businessId, day),
     getOpeningHours(businessId),
     getReservationRules(businessId),
     getActiveProfessionals(businessId),
+    getAbsentProfessionals(businessId, day),
     listBusyTimes(
       businessId,
       instantInTimeZone(day, "00:00"),
       instantInTimeZone(addDays(day, 1), "00:00"),
     ),
   ]);
+  // An Absent Professional takes one Reservation less from each block (ADR 0001).
+  const absentIds = absentOn(day);
+  const professionals = active.filter((professional) => !absentIds.has(professional.id));
+  const absent = active.filter((professional) => absentIds.has(professional.id));
   const blocks = closed
     ? []
     : computeBlocks({ day, now, openingHours, rules, professionals, busyTimes });
-  return { blocks, busyTimes, professionals };
+  return { blocks, busyTimes, professionals, absent };
 }
 
 /** The calculation itself, without reading the database. */

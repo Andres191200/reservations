@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, gte, lt, type SQL } from "drizzle-orm";
+import { and, asc, eq, gt, gte, isNotNull, lt, sql, type SQL } from "drizzle-orm";
 import { db } from "./index";
 import {
   professionals,
@@ -132,8 +132,15 @@ export type AdminReservation = {
   customerEmail: string | null;
   customerPhone: string | null;
   createdBy: CreatedBy;
-  professional: { id: ProfessionalId; name: string };
+  /** `active` is false once the Professional was deactivated. */
+  professional: { id: ProfessionalId; name: string; active: boolean };
 };
+
+/** Time zone of the Business's days, the same as src/core/time-zone.ts. */
+const TIME_ZONE = "America/Argentina/Buenos_Aires";
+
+/** The day, in Argentina, on which a Reservation starts: a Postgres `date`. */
+export const reservationStartDay = sql`(${reservations.startsAt} AT TIME ZONE ${TIME_ZONE})::date`;
 
 /**
  * The Reservations of the Business, Confirmed or Cancelled, that start in [from, to),
@@ -153,7 +160,8 @@ export async function listReservations(
 
 /**
  * The Reservations of the Business that meet `condition`, as the Admin sees them, sorted
- * by start and then by Professional name.
+ * by start and then by Professional name. `condition` may use the `professionals` table:
+ * it is joined.
  */
 export async function listAdminReservations(
   businessId: BusinessId,
@@ -170,7 +178,11 @@ export async function listAdminReservations(
       customerEmail: reservations.customerEmail,
       customerPhone: reservations.customerPhone,
       createdBy: reservations.createdBy,
-      professional: { id: professionals.id, name: professionals.name },
+      professional: {
+        id: professionals.id,
+        name: professionals.name,
+        active: sql<boolean>`${professionals.deactivatedAt} IS NULL`,
+      },
     })
     .from(reservations)
     .innerJoin(
@@ -184,6 +196,21 @@ export async function listAdminReservations(
     )
     .where(and(eq(reservations.businessId, businessId), condition))
     .orderBy(asc(reservations.startsAt), asc(professionals.name), asc(reservations.createdAt));
+}
+
+/** The Confirmed Reservations of the Business, from `fromDay` on, of deactivated Professionals. */
+export async function listConfirmedReservationsOfDeactivated(
+  businessId: BusinessId,
+  fromDay: string,
+): Promise<AdminReservation[]> {
+  return listAdminReservations(
+    businessId,
+    and(
+      eq(reservations.status, "confirmed"),
+      sql`${reservationStartDay} >= ${fromDay}::date`,
+      isNotNull(professionals.deactivatedAt),
+    ),
+  );
 }
 
 /** Name of the exclusion constraint of drizzle/0003_reservations.sql. */

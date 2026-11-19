@@ -5,7 +5,8 @@ import { insertReservation, type BusyTime, type StoredReservation } from "@/db/r
 import type { BusinessId, CreatedBy, ProfessionalId } from "@/db/schema";
 import { getDayAvailability } from "./available-slots";
 import { sendWithoutFailing, type EmailSender } from "./email";
-import type { Professional } from "./professionals";
+import { professionalAbsentError } from "./absences";
+import { PROFESSIONAL_NOT_FOUND_ERROR, type Professional } from "./professionals";
 import { confirmationEmail, type ConfirmedReservationDetails } from "./reservation-emails";
 import type { Result } from "./result";
 import { dayInTimeZone } from "./time-zone";
@@ -22,8 +23,7 @@ export const SLOT_TAKEN_ERROR = "Ese horario se acaba de ocupar. Elegí otro.";
 /** Shown when the block is not one the Customer can reserve (rules, Opening hours). */
 export const SLOT_NOT_RESERVABLE_ERROR = "Ese horario no se puede reservar. Elegí otro.";
 
-/** Shown when the Admin chooses a Professional that is not active in the Business. */
-export const PROFESSIONAL_NOT_FOUND_ERROR = "Ese Profesional no existe o está dado de baja.";
+export { PROFESSIONAL_NOT_FOUND_ERROR };
 
 /** Shown when the Professional the Admin chose already has a Reservation at that time. */
 export function professionalBusyError(name: string): string {
@@ -162,7 +162,7 @@ async function createReservation(
 ): Promise<Result<Reservation>> {
   const { startsAt, customer, createdBy, professionalId } = request;
 
-  const { blocks, busyTimes, professionals } = await getDayAvailability(
+  const { blocks, busyTimes, professionals, absent } = await getDayAvailability(
     businessId,
     dayInTimeZone(startsAt),
     now,
@@ -174,7 +174,11 @@ async function createReservation(
   let takenError: string;
   if (professionalId) {
     const chosen = professionals.find((professional) => professional.id === professionalId);
-    if (!chosen) return { ok: false, error: PROFESSIONAL_NOT_FOUND_ERROR };
+    if (!chosen) {
+      const absentOne = absent.find((professional) => professional.id === professionalId);
+      if (absentOne) return { ok: false, error: professionalAbsentError(absentOne.name) };
+      return { ok: false, error: PROFESSIONAL_NOT_FOUND_ERROR };
+    }
     candidates = block.freeProfessionals.filter((free) => free.id === chosen.id);
     takenError = professionalBusyError(chosen.name);
   } else {
