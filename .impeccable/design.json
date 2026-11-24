@@ -1,0 +1,450 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-20T05:33:42+00:00",
+  "title": "Design System: Reservas",
+  "extensions": {
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "Niebla de fondo",
+        "canonical": "#f5f6fa",
+        "tonalRamp": [
+          "oklch(15% 0.002 275)",
+          "oklch(26% 0.003 275)",
+          "oklch(37% 0.004 275)",
+          "oklch(48% 0.005 275)",
+          "oklch(59% 0.005 275)",
+          "oklch(70% 0.004 275)",
+          "oklch(82% 0.003 275)",
+          "oklch(95% 0.002 275)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Superficie",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0.000 90)",
+          "oklch(26% 0.000 90)",
+          "oklch(37% 0.000 90)",
+          "oklch(48% 0.000 90)",
+          "oklch(59% 0.000 90)",
+          "oklch(70% 0.000 90)",
+          "oklch(82% 0.000 90)",
+          "oklch(95% 0.000 90)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Borde pizarra",
+        "canonical": "#d9dde7",
+        "tonalRamp": [
+          "oklch(15% 0.007 268)",
+          "oklch(26% 0.009 268)",
+          "oklch(37% 0.011 268)",
+          "oklch(48% 0.013 268)",
+          "oklch(59% 0.014 268)",
+          "oklch(70% 0.011 268)",
+          "oklch(82% 0.009 268)",
+          "oklch(95% 0.007 268)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Tinta de texto",
+        "canonical": "#161a24",
+        "tonalRamp": [
+          "oklch(15% 0.009 268)",
+          "oklch(26% 0.012 268)",
+          "oklch(37% 0.016 268)",
+          "oklch(48% 0.019 268)",
+          "oklch(59% 0.020 268)",
+          "oklch(70% 0.016 268)",
+          "oklch(82% 0.013 268)",
+          "oklch(95% 0.009 268)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Gris apagado",
+        "canonical": "#5b6375",
+        "tonalRamp": [
+          "oklch(15% 0.014 266)",
+          "oklch(26% 0.018 266)",
+          "oklch(37% 0.023 266)",
+          "oklch(48% 0.028 266)",
+          "oklch(59% 0.029 266)",
+          "oklch(70% 0.024 266)",
+          "oklch(82% 0.019 266)",
+          "oklch(95% 0.014 266)"
+        ]
+      },
+      "primary": {
+        "role": "primary",
+        "displayName": "Azul tinta",
+        "canonical": "#3858d6",
+        "tonalRamp": [
+          "oklch(15% 0.089 268)",
+          "oklch(26% 0.119 268)",
+          "oklch(37% 0.148 268)",
+          "oklch(48% 0.178 268)",
+          "oklch(59% 0.186 268)",
+          "oklch(70% 0.156 268)",
+          "oklch(82% 0.124 268)",
+          "oklch(95% 0.089 268)"
+        ]
+      },
+      "on-primary": {
+        "role": "neutral",
+        "displayName": "Texto sobre acento",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0.000 90)",
+          "oklch(26% 0.000 90)",
+          "oklch(37% 0.000 90)",
+          "oklch(48% 0.000 90)",
+          "oklch(59% 0.000 90)",
+          "oklch(70% 0.000 90)",
+          "oklch(82% 0.000 90)",
+          "oklch(95% 0.000 90)"
+        ]
+      },
+      "danger": {
+        "role": "error",
+        "displayName": "Rojo cancelado",
+        "canonical": "#c62f2f",
+        "tonalRamp": [
+          "oklch(15% 0.085 26)",
+          "oklch(26% 0.114 26)",
+          "oklch(37% 0.142 26)",
+          "oklch(48% 0.170 26)",
+          "oklch(59% 0.178 26)",
+          "oklch(70% 0.149 26)",
+          "oklch(82% 0.119 26)",
+          "oklch(95% 0.085 26)"
+        ]
+      },
+      "success": {
+        "role": "success",
+        "displayName": "Verde confirmado",
+        "canonical": "#12805a",
+        "tonalRamp": [
+          "oklch(15% 0.050 163)",
+          "oklch(26% 0.067 163)",
+          "oklch(37% 0.083 163)",
+          "oklch(48% 0.100 163)",
+          "oklch(59% 0.104 163)",
+          "oklch(70% 0.088 163)",
+          "oklch(82% 0.070 163)",
+          "oklch(95% 0.050 163)"
+        ]
+      },
+      "bg-dark": {
+        "role": "neutral",
+        "displayName": "Niebla de fondo (oscuro)",
+        "canonical": "#0b0d12",
+        "tonalRamp": [
+          "oklch(15% 0.005 268)",
+          "oklch(26% 0.007 268)",
+          "oklch(37% 0.008 268)",
+          "oklch(48% 0.010 268)",
+          "oklch(59% 0.011 268)",
+          "oklch(70% 0.009 268)",
+          "oklch(82% 0.007 268)",
+          "oklch(95% 0.005 268)"
+        ]
+      },
+      "surface-dark": {
+        "role": "neutral",
+        "displayName": "Superficie (oscuro)",
+        "canonical": "#151924",
+        "tonalRamp": [
+          "oklch(15% 0.010 269)",
+          "oklch(26% 0.014 269)",
+          "oklch(37% 0.017 269)",
+          "oklch(48% 0.020 269)",
+          "oklch(59% 0.021 269)",
+          "oklch(70% 0.018 269)",
+          "oklch(82% 0.014 269)",
+          "oklch(95% 0.010 269)"
+        ]
+      },
+      "border-dark": {
+        "role": "neutral",
+        "displayName": "Borde pizarra (oscuro)",
+        "canonical": "#262c3a",
+        "tonalRamp": [
+          "oklch(15% 0.012 267)",
+          "oklch(26% 0.016 267)",
+          "oklch(37% 0.020 267)",
+          "oklch(48% 0.024 267)",
+          "oklch(59% 0.026 267)",
+          "oklch(70% 0.021 267)",
+          "oklch(82% 0.017 267)",
+          "oklch(95% 0.012 267)"
+        ]
+      },
+      "text-dark": {
+        "role": "neutral",
+        "displayName": "Tinta de texto (oscuro)",
+        "canonical": "#e6e8ee",
+        "tonalRamp": [
+          "oklch(15% 0.004 271)",
+          "oklch(26% 0.005 271)",
+          "oklch(37% 0.006 271)",
+          "oklch(48% 0.008 271)",
+          "oklch(59% 0.008 271)",
+          "oklch(70% 0.007 271)",
+          "oklch(82% 0.005 271)",
+          "oklch(95% 0.004 271)"
+        ]
+      },
+      "muted-dark": {
+        "role": "neutral",
+        "displayName": "Gris apagado (oscuro)",
+        "canonical": "#8b93a7",
+        "tonalRamp": [
+          "oklch(15% 0.014 268)",
+          "oklch(26% 0.019 268)",
+          "oklch(37% 0.023 268)",
+          "oklch(48% 0.028 268)",
+          "oklch(59% 0.029 268)",
+          "oklch(70% 0.025 268)",
+          "oklch(82% 0.020 268)",
+          "oklch(95% 0.014 268)"
+        ]
+      },
+      "primary-dark": {
+        "role": "primary",
+        "displayName": "Azul tinta (oscuro)",
+        "canonical": "#6d8cff",
+        "tonalRamp": [
+          "oklch(15% 0.079 270)",
+          "oklch(26% 0.105 270)",
+          "oklch(37% 0.131 270)",
+          "oklch(48% 0.157 270)",
+          "oklch(59% 0.164 270)",
+          "oklch(70% 0.138 270)",
+          "oklch(82% 0.109 270)",
+          "oklch(95% 0.079 270)"
+        ]
+      },
+      "on-primary-dark": {
+        "role": "neutral",
+        "displayName": "Texto sobre acento (oscuro)",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0.000 90)",
+          "oklch(26% 0.000 90)",
+          "oklch(37% 0.000 90)",
+          "oklch(48% 0.000 90)",
+          "oklch(59% 0.000 90)",
+          "oklch(70% 0.000 90)",
+          "oklch(82% 0.000 90)",
+          "oklch(95% 0.000 90)"
+        ]
+      },
+      "danger-dark": {
+        "role": "error",
+        "displayName": "Rojo cancelado (oscuro)",
+        "canonical": "#ff6b6b",
+        "tonalRamp": [
+          "oklch(15% 0.082 23)",
+          "oklch(26% 0.110 23)",
+          "oklch(37% 0.137 23)",
+          "oklch(48% 0.164 23)",
+          "oklch(59% 0.171 23)",
+          "oklch(70% 0.144 23)",
+          "oklch(82% 0.114 23)",
+          "oklch(95% 0.082 23)"
+        ]
+      },
+      "success-dark": {
+        "role": "success",
+        "displayName": "Verde confirmado (oscuro)",
+        "canonical": "#4cd4a0",
+        "tonalRamp": [
+          "oklch(15% 0.064 164)",
+          "oklch(26% 0.085 164)",
+          "oklch(37% 0.106 164)",
+          "oklch(48% 0.127 164)",
+          "oklch(59% 0.133 164)",
+          "oklch(70% 0.112 164)",
+          "oklch(82% 0.089 164)",
+          "oklch(95% 0.064 164)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Nombre del Negocio en la página pública."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Títulos de sección y de modal del panel."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Nombre del Negocio en la barra del panel; día elegido."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Texto corriente."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Aclaraciones, badges y contactos."
+      },
+      "time": {
+        "displayName": "Horario",
+        "purpose": "Horas de Reservas y Horarios disponibles, en cifras tabulares."
+      }
+    },
+    "shadows": [
+      {
+        "name": "modal-backdrop",
+        "value": "rgb(0 0 0 / 60%)",
+        "purpose": "Fondo oscurecido detrás del modal; no hay box-shadow en el sistema actual."
+      }
+    ],
+    "motion": [
+      {
+        "name": "modal-in",
+        "value": "160ms ease-out; from opacity 0, translateY(8px) scale(0.98)",
+        "purpose": "Entrada del modal; desactivada con prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botón principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción principal de un formulario o pantalla: Reservar, Guardar, Nueva Reserva.",
+      "html": "<button class=\"ds-btn-primary\">Reservar</button>",
+      "css": ".ds-btn-primary { min-height: 44px; padding: 10px 16px; border: 0; border-radius: 10px; background: var(--color-primary); color: var(--color-on-primary); font: inherit; font-weight: 600; cursor: pointer; } .ds-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }"
+    },
+    {
+      "name": "Botón secundario",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Acción alternativa o de bajo peso: Ver horarios, Cerrar, Reasignar.",
+      "html": "<button class=\"ds-btn-secondary\">Ver horarios</button>",
+      "css": ".ds-btn-secondary { min-height: 44px; padding: 8px 16px; border: 1px solid var(--color-border); border-radius: 10px; background: transparent; color: var(--color-text); font: inherit; cursor: pointer; } .ds-btn-secondary:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }"
+    },
+    {
+      "name": "Botón destructivo",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Solo para acciones destructivas: cancelar una Reserva, dar de Baja a un Profesional.",
+      "html": "<button class=\"ds-btn-danger\">Cancelar Reserva</button>",
+      "css": ".ds-btn-danger { min-height: 44px; padding: 10px 16px; border: 0; border-radius: 10px; background: var(--color-danger); color: var(--color-bg); font: inherit; font-weight: 600; cursor: pointer; } .ds-btn-danger:disabled { opacity: 0.6; cursor: wait; } .ds-btn-danger:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }"
+    },
+    {
+      "name": "Campo de texto",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo con etiqueta arriba; relleno del color de fondo para leerse hundido dentro de la tarjeta.",
+      "html": "<label class=\"ds-field\"><span>Nombre</span><input class=\"ds-input\" type=\"text\" placeholder=\"Tu nombre\"></label>",
+      "css": ".ds-field { display: grid; gap: 4px; color: var(--color-text); } .ds-input { min-height: 44px; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-bg); color: var(--color-text); font: inherit; font-size: max(1rem, 16px); } .ds-input:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }"
+    },
+    {
+      "name": "Tarjeta",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Contenedor de cada bloque: superficie sobre el fondo, borde de 1px, sin sombra.",
+      "html": "<section class=\"ds-card\"><h2 class=\"ds-card-title\">Viernes 20 de noviembre</h2><p class=\"ds-card-muted\">Horarios en hora de Argentina.</p></section>",
+      "css": ".ds-card { display: grid; gap: 12px; padding: 24px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); color: var(--color-text); } .ds-card-title { font-size: 1.125rem; font-weight: 700; } .ds-card-muted { color: var(--color-muted); }"
+    },
+    {
+      "name": "Horarios disponibles",
+      "kind": "custom",
+      "refersTo": "slot",
+      "description": "Componente distintivo: grilla de horas tabulares; hover y foco en Azul tinta, la elegida con tinte al 15%.",
+      "html": "<ul class=\"ds-slots\"><li><a href=\"#\">09:00</a></li><li><a href=\"#\" class=\"ds-slot-selected\">10:00</a></li><li><a href=\"#\">11:00</a></li><li><a href=\"#\">12:00</a></li></ul>",
+      "css": ".ds-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; list-style: none; margin: 0; padding: 0; } .ds-slots a { display: grid; place-items: center; min-height: 44px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-bg); color: var(--color-text); font-variant-numeric: tabular-nums; font-weight: 600; text-decoration: none; } .ds-slots a:hover, .ds-slots a:focus-visible { border-color: var(--color-primary); color: var(--color-primary); } .ds-slots a:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; } .ds-slots a.ds-slot-selected { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 15%, transparent); color: var(--color-primary); }"
+    },
+    {
+      "name": "Badges de estado",
+      "kind": "chip",
+      "refersTo": "badge-confirmed",
+      "description": "Estado de la Reserva: texto en el color del estado sobre su tinte al 15%.",
+      "html": "<span class=\"ds-badge ds-badge-confirmed\">Confirmada</span> <span class=\"ds-badge ds-badge-cancelled\">Cancelada</span>",
+      "css": ".ds-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.875rem; white-space: nowrap; } .ds-badge-confirmed { background: color-mix(in srgb, var(--color-success) 15%, transparent); color: var(--color-success); } .ds-badge-cancelled { background: color-mix(in srgb, var(--color-danger) 15%, transparent); color: var(--color-danger); }"
+    },
+    {
+      "name": "Navegación del panel",
+      "kind": "nav",
+      "description": "Links de texto en la barra superior; el de Reservas en conflicto en rojo.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\">Reservas</a><a href=\"#\">Agenda</a><a href=\"#\">Profesionales</a><a href=\"#\" class=\"ds-nav-conflicts\">Conflictos (2)</a></nav>",
+      "css": ".ds-nav { display: flex; flex-wrap: wrap; gap: 16px; } .ds-nav a { color: var(--color-text); text-decoration: none; } .ds-nav a:hover { color: var(--color-primary); } .ds-nav a:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; } .ds-nav a.ds-nav-conflicts { color: var(--color-danger); font-weight: 600; }"
+    },
+    {
+      "name": "Pestañas de Profesional",
+      "kind": "nav",
+      "description": "Agenda: una cápsula por Profesional; la activa con borde y texto Azul tinta sobre tinte al 15%.",
+      "html": "<nav class=\"ds-tabs\"><a href=\"#\" aria-current=\"page\">Juan</a><a href=\"#\">María</a><a href=\"#\">Pedro</a></nav>",
+      "css": ".ds-tabs { display: flex; flex-wrap: wrap; gap: 8px; } .ds-tabs a { padding: 6px 12px; border: 1px solid var(--color-border); border-radius: 10px; color: var(--color-text); text-decoration: none; } .ds-tabs a:hover { border-color: var(--color-primary); } .ds-tabs a:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; } .ds-tabs a[aria-current=\"page\"] { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 15%, transparent); color: var(--color-primary); font-weight: 600; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Infraestructura silenciosa",
+    "overview": "**Creative North Star: \"Infraestructura silenciosa\"**\n\nComo la señalética de un buen edificio: neutra, legible y pensada para cualquier inquilino. La plataforma no tiene voz visual propia en la página pública. El que habla es el Negocio, con su nombre como único elemento grande. La interfaz se limita a hacer que elegir un día, un Horario disponible y dejar los datos no tenga ninguna duda.\n\nEl carácter es **preciso y confiable**: horarios con cifras tabulares, estados (Confirmada, Cancelada, en conflicto) con color y texto a la vez, y ningún elemento decorativo que compita con la tarea. La paleta son neutros fríos gris azulados con un solo acento, el Azul tinta, que marca dónde actuar. Los dos temas, claro y oscuro, son equivalentes: el oscuro es el predeterminado del código y el claro se activa con la preferencia del navegador o el selector.\n\nLa densidad es cómoda en la página pública (pensada para el celular, con objetivos táctiles de 44px) y algo más compacta en el panel, que se usa en la computadora del local.",
+    "keyCharacteristics": [
+      "Neutros fríos gris azulados y un único acento: el Azul tinta.",
+      "Superficies planas, separadas por bordes de 1px y por el contraste entre fondo y tarjeta.",
+      "Una sola fuente (Geist) y jerarquía por tamaño y peso, sin mayúsculas decorativas.",
+      "Esquinas suavemente redondeadas (10px) en todo, desde botones hasta modales.",
+      "Horarios siempre con cifras tabulares y en negrita: son el dato principal.",
+      "Neutral respecto del rubro: nada sugiere barbería, spa o consultorio."
+    ],
+    "rules": [
+      {
+        "name": "La Regla de la Única Tinta",
+        "body": "El Azul tinta es el único acento. Rojo y verde solo comunican estado, nunca decoran. No se suman acentos ni fondos saturados.",
+        "section": "colors"
+      },
+      {
+        "name": "La Regla del Tinte",
+        "body": "Los fondos de estado y de selección no son colores nuevos: se derivan del color del rol con `tint()` (mezcla con transparente al 8%, 15% o 40%). Así funcionan en los dos temas sin tokens extra.",
+        "section": "colors"
+      },
+      {
+        "name": "La Regla de la Hora Tabular",
+        "body": "Toda hora lleva `font-variant-numeric: tabular-nums` y peso 600. Las columnas de horarios se alinean y la hora se lee antes que cualquier otro dato.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Do usar las variables de tema (`$color-*` → `--color-*`) para todo color, así funciona igual en tema claro y oscuro.",
+      "Do derivar fondos de estado y selección con `tint()` (8%, 15% o 40%) en lugar de agregar colores nuevos.",
+      "Do mostrar toda hora con cifras tabulares y peso 600.",
+      "Do comunicar cada estado con texto además de color (\"Confirmada\", \"Cancelada\").",
+      "Do respetar los 44px de objetivo táctil y los 16px de tamaño mínimo en los campos de la página pública.",
+      "Do usar el radio único de 10px y bordes de 1px en todo contenedor e interactivo nuevo.",
+      "Do mantener la entrada del modal (160ms) desactivable con `prefers-reduced-motion`."
+    ],
+    "donts": [
+      "Don't darle a la página pública el aspecto de un rubro (barbería, spa, consultorio): tiene que servir para cualquier Negocio.",
+      "Don't sumar acentos, gradientes ni fondos saturados. El Azul tinta es el único color de acción.",
+      "Don't usar rojo o verde como decoración. Solo marcan estado o una acción destructiva.",
+      "Don't inventar sombras sueltas en un componente mientras no exista la escala de sombras del design system unificado.",
+      "Don't usar \"turno\" en ningún texto de la interfaz (ver GLOSSARY.md)."
+    ]
+  }
+}
