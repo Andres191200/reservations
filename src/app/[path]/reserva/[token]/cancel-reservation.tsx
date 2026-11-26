@@ -11,7 +11,8 @@ import { cancelReservation, type CancelReservationState } from "./actions";
 export function CancelReservation(props: {
   path: string;
   token: string;
-  cancellableUntil: string;
+  /** Until when it can be cancelled, unless the page already says it. */
+  cancellableUntil?: string;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [state, action, pending] = useActionState<CancelReservationState>(
@@ -21,9 +22,11 @@ export function CancelReservation(props: {
 
   return (
     <div className={styles.cancellation}>
-      <p className={styles.muted}>
-        Si no podés ir, podés cancelarla hasta el {props.cancellableUntil}.
-      </p>
+      {props.cancellableUntil && (
+        <p className={styles.muted}>
+          Si no podés ir, podés cancelarla hasta el {props.cancellableUntil}.
+        </p>
+      )}
 
       {confirming ? (
         <form action={action} className={styles.confirmation}>

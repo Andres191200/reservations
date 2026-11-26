@@ -46,7 +46,7 @@ async function stored(reservationId: ReservationId) {
 }
 
 describe("The Reservation seen through the Cancellation link", () => {
-  it("shows the day, time and status of a Confirmed Reservation the Customer can cancel", async () => {
+  it("shows the day, time, status and email of a Confirmed Reservation the Customer can cancel", async () => {
     const { businessId } = await setUpBusiness();
     const { id, cancellationToken } = await reserveAt0900(businessId);
 
@@ -61,6 +61,7 @@ describe("The Reservation seen through the Cancellation link", () => {
       startsAt: new Date(AT_0900),
       endsAt: new Date("2026-11-11T13:00:00.000Z"),
       status: "confirmed",
+      customerEmail: "ana@mail.com",
       cancelledBy: null,
       cancellableUntil: atTheDeadline,
       cancellableByCustomer: true,
