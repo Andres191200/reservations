@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect, RedirectType } from "next/navigation";
 import { reserve, SLOT_TAKEN_ERROR } from "@/core/reservations";
+import type { FieldErrors } from "@/core/result";
 import { findBusinessByPath } from "@/db/businesses";
 import { withUnexpectedErrors } from "@/lib/action-errors";
 import { clientIp } from "@/lib/client-ip";
@@ -29,7 +30,10 @@ const reservationsPerIp = createRateLimiter({
 export type CustomerFields = { name: string; email: string; phone: string };
 
 export type ReserveState = {
+  /** What is not about one field: shown above the button. */
   error?: string;
+  /** What is about one field, shown beside it. */
+  fieldErrors?: Partial<CustomerFields>;
   /** The block filled up meanwhile: the Customer has to choose another one. */
   slotTaken?: boolean;
   fields?: CustomerFields;
@@ -92,6 +96,7 @@ export async function reserveSlot(
     });
     if (!result.ok) {
       rateLimit.release();
+      if (result.fieldErrors) return { ...byFormField(result.fieldErrors), fields };
       return { error: result.error, slotTaken: result.error === SLOT_TAKEN_ERROR, fields };
     }
 
@@ -100,6 +105,25 @@ export async function reserveSlot(
       RedirectType.replace,
     );
   }, { fields });
+}
+
+/** The form's name for each field of the core's input that the Customer fills. */
+const FORM_FIELDS: Record<string, keyof CustomerFields> = {
+  customerName: "name",
+  customerEmail: "email",
+  customerPhone: "phone",
+};
+
+/** The messages of the Customer's fields go beside them; any other one, above the button. */
+function byFormField(fieldErrors: FieldErrors): Pick<ReserveState, "error" | "fieldErrors"> {
+  const byField: Partial<CustomerFields> = {};
+  const others: string[] = [];
+  for (const [field, message] of Object.entries(fieldErrors)) {
+    if (!message) continue;
+    if (FORM_FIELDS[field]) byField[FORM_FIELDS[field]] = message;
+    else others.push(message);
+  }
+  return { fieldErrors: byField, ...(others.length > 0 && { error: others.join("\n") }) };
 }
 
 function rateLimitError(retryAt: Date, now: Date): string {

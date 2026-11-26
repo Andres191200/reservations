@@ -203,7 +203,7 @@ Un único radio, **10px** (`$radius`), en todo: tarjetas, campos, botones, Horar
 
 ### Buttons
 - **Shape:** esquinas suavemente redondeadas (10px), sin borde en los botones con relleno.
-- **Primary:** relleno Azul tinta, texto blanco, peso 600. Deshabilitado: opacidad 0.6 (en la página pública, mientras el captcha no da un token).
+- **Primary:** relleno Azul tinta, texto blanco, peso 600. Deshabilitado: opacidad 0.6 (en la página pública, solo mientras se envía). "Confirmar Reserva" no se deshabilita mientras el captcha no da un token: si se toca antes, una línea chica debajo dice "Verificando tu navegador…" y el formulario se envía al llegar el token.
 - **Secondary:** fondo transparente, borde de 1px y texto principal, peso normal.
 - **Danger:** relleno rojo, texto en el color de fondo, peso 600. Solo para acciones destructivas (cancelar una Reserva, dar de Baja).
 - **Link con forma de botón:** en el panel, "Nueva Reserva" es un link con el mismo aspecto que el botón principal.
@@ -213,7 +213,8 @@ Un único radio, **10px** (`$radius`), en todo: tarjetas, campos, botones, Horar
 ### Inputs / Fields
 - **Style:** relleno de color de fondo, borde de 1px, 10px de radio y la tipografía heredada. Etiqueta arriba con 4px de separación.
 - **Focus:** el anillo de foco global.
-- **Error:** mensaje en rojo debajo del formulario, con saltos de línea respetados.
+- **Error:** el de un campo va debajo de ese campo, en rojo y 0.875rem, con el borde del campo en rojo (`aria-invalid`, `aria-describedby`); el foco va al primer campo con error. Los que no son de un campo, en rojo sobre el botón, con saltos de línea respetados.
+- **Ayuda:** debajo del campo, en gris y 0.875rem, leída con el campo (`aria-describedby`).
 - **Divergencia a unificar:** la página pública fija 44px de alto y 16px de tamaño mínimo; el panel usa padding 10px 12px.
 
 ### Cards / Containers
@@ -224,7 +225,7 @@ Un único radio, **10px** (`$radius`), en todo: tarjetas, campos, botones, Horar
 - **Internal Padding:** 16px en el celular y 24px desde 640/768px.
 
 ### Horarios disponibles (componente distintivo)
-Grilla de celdas iguales con la hora en tabulares y peso 600, rellenas con el color de fondo y con borde de 1px. En hover y foco, el borde y el texto pasan a Azul tinta. En el panel (cargar una Reserva) son radios accesibles: el input queda invisible encima de la celda, y la opción elegida lleva borde y texto Azul tinta sobre su tinte al 15%.
+Grilla de celdas iguales con la hora en tabulares y peso 600, rellenas con el color de fondo y con borde de 1px. En hover y foco, el borde y el texto pasan a Azul tinta. Al tocarla (`:active`) y mientras carga el formulario (`useLinkStatus`), toma el aspecto de elegida: borde y texto Azul tinta sobre su tinte al 15%, que late lento (no con `prefers-reduced-motion`). En el formulario, el Horario elegido se repite arriba de la tarjeta, sobre el tinte Azul tinta al 8% con borde al 40%, con un link "Cambiar" que vuelve a ese día. En el panel (cargar una Reserva) son radios accesibles: el input queda invisible encima de la celda, y la opción elegida lleva borde y texto Azul tinta sobre su tinte al 15%.
 
 ### Badges de estado
 Píldoras de 10px de radio con el texto en el color del estado sobre su tinte al 15%, en 0.875rem. Confirmada en verde, Cancelada en rojo. Una Reserva Cancelada además se atenúa y se tacha (hora y Cliente) en la lista.

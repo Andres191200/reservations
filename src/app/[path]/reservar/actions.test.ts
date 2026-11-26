@@ -82,3 +82,24 @@ describe("Reserving from the public page", () => {
     ).toEqual([]);
   });
 });
+
+describe("A rejected field", () => {
+  it("comes back beside that field, by the form's name for it, with what the Customer typed", async () => {
+    await setUpBusiness();
+    const typed = { name: "", email: "ana@", phone: "llamame" };
+
+    const result = await outcome(reserveSlot("don-pepe", AT_0900, {}, form(typed)));
+
+    expect(result).toEqual({
+      returned: {
+        fieldErrors: {
+          name: "Completá tu nombre.",
+          email: "El email no es válido.",
+          phone: "El teléfono solo puede tener números, espacios, +, - y paréntesis.",
+        },
+        fields: typed,
+      },
+    });
+    expect(await db.select().from(reservations)).toEqual([]);
+  });
+});
