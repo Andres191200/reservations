@@ -20,10 +20,10 @@ const TOKEN_MAX_LENGTH = 100;
 /** Shown for a token or id that does not exist, or that belongs to another Business. */
 export const RESERVATION_NOT_FOUND_ERROR = "Reserva no encontrada.";
 
-export const ALREADY_CANCELLED_ERROR = "Esta Reserva ya está cancelada.";
+export const ALREADY_CANCELLED_ERROR = "Esta reserva ya está cancelada.";
 
 export const PAST_CANCELLATION_DEADLINE_ERROR =
-  "Ya pasó el límite de cancelación. Si no podés ir, contactá al Negocio.";
+  "Ya pasó el límite de cancelación. Si no podés ir, contactá al negocio.";
 
 /** What the Customer sees of their Reservation through the Cancellation link. */
 export type ReservationForCustomer = {

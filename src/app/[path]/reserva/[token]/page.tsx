@@ -10,13 +10,20 @@ import { JUST_CREATED_PARAM } from "../../format";
 import styles from "../../public-page.module.scss";
 import { CancelReservation } from "./cancel-reservation";
 import { JustCreatedNotice } from "./just-created-notice";
+import { ReservationNotFound } from "./reservation-not-found";
 
 export async function generateMetadata({
   params,
 }: PageProps<"/[path]/reserva/[token]">): Promise<Metadata> {
-  const business = await findBusinessByPath((await params).path);
+  const { path, token } = await params;
+  const business = await findBusinessByPath(path);
+  // A link without its Reservation shows "Reserva no encontrada", and so does the tab.
+  const title =
+    business && (await getReservationForCustomer(business.id, token, new Date()))
+      ? `Tu reserva en ${business.name}`
+      : "Reserva no encontrada · Reservas";
   return {
-    title: business ? `Tu Reserva en ${business.name}` : "Reserva no encontrada · Reservas",
+    title,
     // The link is personal: keep it out of search engines and of the Referer header.
     robots: { index: false, follow: false },
     referrer: "no-referrer",
@@ -33,11 +40,15 @@ export default function ReservationPage({
   searchParams,
 }: PageProps<"/[path]/reserva/[token]">) {
   return (
-    <main className={styles.page}>
-      <Suspense fallback={<p className={styles.muted}>Cargando…</p>}>
-        <CustomerReservation params={params} searchParams={searchParams} />
-      </Suspense>
-    </main>
+    <Suspense
+      fallback={
+        <main className={styles.page}>
+          <p className={styles.muted}>Cargando…</p>
+        </main>
+      }
+    >
+      <CustomerReservation params={params} searchParams={searchParams} />
+    </Suspense>
   );
 }
 
@@ -48,7 +59,9 @@ async function CustomerReservation({ params, searchParams }: PageProps<"/[path]/
 
   const now = new Date();
   const reservation = await getReservationForCustomer(business.id, token, now);
-  if (!reservation) notFound();
+  // Not `notFound()`: this screen offers the page of the Business, which not-found.tsx
+  // cannot know. The status is the same, 200: the page already started streaming.
+  if (!reservation) return <ReservationNotFound business={business} />;
 
   const { startsAt, status, customerEmail, cancellableUntil } = reservation;
   // Only the Customer reserves from the public page, always with an email; a Cancelled
@@ -59,9 +72,9 @@ async function CustomerReservation({ params, searchParams }: PageProps<"/[path]/
   const cancellableUntilTime = timeInTimeZone(cancellableUntil);
 
   return (
-    <>
+    <main className={styles.page}>
       <header className={styles.header}>
-        <p className={styles.muted}>Tu Reserva en</p>
+        <p className={styles.muted}>Tu reserva en</p>
         <h1>{business.name}</h1>
       </header>
 
@@ -110,10 +123,12 @@ async function CustomerReservation({ params, searchParams }: PageProps<"/[path]/
           <>
             <p className={styles.notice}>
               {reservation.cancelledBy === "business"
-                ? `${business.name} canceló esta Reserva.`
-                : "Cancelaste esta Reserva."}
+                ? `${business.name} canceló esta reserva.`
+                : "Cancelaste esta reserva."}
             </p>
-            <Link href={`/${path}`}>Reservar otro horario</Link>
+            <Link className={styles.textLink} href={`/${path}`}>
+              Reservar otro horario
+            </Link>
           </>
         ) : reservation.cancellableByCustomer ? (
           <CancelReservation
@@ -127,7 +142,7 @@ async function CustomerReservation({ params, searchParams }: PageProps<"/[path]/
             }
           />
         ) : startsAt <= now ? (
-          <p className={styles.notice}>Esta Reserva ya pasó.</p>
+          <p className={styles.notice}>Esta reserva ya pasó.</p>
         ) : (
           <p className={styles.notice}>
             Ya pasó el límite para cancelarla desde acá. Si no podés ir, contactá directamente a{" "}
@@ -135,6 +150,6 @@ async function CustomerReservation({ params, searchParams }: PageProps<"/[path]/
           </p>
         )}
       </section>
-    </>
+    </main>
   );
 }

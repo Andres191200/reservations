@@ -9,4 +9,4 @@ export const TURNSTILE_TOKEN_FIELD = "turnstileToken";
  * page, which would erase what the Customer typed.
  */
 export const TURNSTILE_FAILED_ERROR =
-  "No pudimos verificar que no seas un robot. Revisá tu conexión y volvé a tocar Confirmar Reserva.";
+  "No pudimos verificar que no seas un robot. Revisá tu conexión y volvé a tocar “Confirmar reserva”.";

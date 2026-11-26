@@ -3,7 +3,8 @@
 import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
 import { useEffect } from "react";
-import styles from "./error-screen.module.scss";
+import { MessageScreen } from "./message-screen";
+import styles from "./message-screen.module.scss";
 
 /**
  * What a person sees when a page fails: a clear message in Spanish and a way out, never
@@ -31,21 +32,17 @@ export function ErrorScreen({
   }, [error]);
 
   return (
-    <section className={styles.screen} role="alert">
-      <h1 className={styles.title}>{title}</h1>
-      <p className={styles.message}>{message}</p>
-      <div className={styles.actions}>
-        {retry && (
-          <button type="button" className={styles.retry} onClick={() => retry()}>
-            Reintentar
-          </button>
-        )}
-        {home && (
-          <Link href={home.href} className={styles.home}>
-            {home.label}
-          </Link>
-        )}
-      </div>
-    </section>
+    <MessageScreen title={title} message={message} alert>
+      {retry && (
+        <button type="button" className={styles.primaryAction} onClick={() => retry()}>
+          Reintentar
+        </button>
+      )}
+      {home && (
+        <Link href={home.href} className={styles.secondaryAction}>
+          {home.label}
+        </Link>
+      )}
+    </MessageScreen>
   );
 }

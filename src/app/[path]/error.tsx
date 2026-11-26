@@ -10,7 +10,7 @@ export default function PublicPageError({ error, retry }: { error: unknown; retr
       <ErrorScreen
         error={error}
         retry={retry}
-        title="No pudimos cargar los Horarios disponibles"
+        title="No pudimos cargar los horarios disponibles"
         message="Puede ser un problema momentáneo. Probá de nuevo en un rato."
       />
     </main>

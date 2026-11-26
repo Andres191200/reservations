@@ -65,7 +65,7 @@ export async function reserveSlot(
 
   return withUnexpectedErrors(async () => {
     const business = await findBusinessByPath(path);
-    if (!business) return { error: "Este Negocio no existe.", fields };
+    if (!business) return { error: "Este negocio no existe.", fields };
 
     const ip = clientIp(await headers());
     const turnstileToken = String(formData.get(TURNSTILE_TOKEN_FIELD) ?? "");

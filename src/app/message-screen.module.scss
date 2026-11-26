@@ -28,12 +28,18 @@
   gap: $space;
 }
 
-.retry,
-.home {
-  padding: $space * 1.25 $space * 2;
+// The ways out: buttons or links, with the 44px touch target.
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: $space $space * 2;
   border-radius: $radius;
   font: inherit;
   font-weight: 600;
+  text-align: center;
   text-decoration: none;
   cursor: pointer;
 
@@ -42,18 +48,18 @@
   }
 }
 
-.retry {
+.primaryAction {
   border: 0;
   background: $color-primary;
   color: $color-on-primary;
 }
 
-.home {
+.secondaryAction {
   border: 1px solid $color-border;
   color: $color-text;
 }
 
-// A whole page whose only content is the error, centered.
+// A whole page whose only content is the message, centered.
 .page {
   display: grid;
   place-items: center;

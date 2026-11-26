@@ -36,7 +36,7 @@ export function confirmationEmail(details: ConfirmedReservationDetails): Email {
   const text = [
     `Hola, ${customerName}:`,
     "",
-    `Tu Reserva en ${business.name} quedó confirmada.`,
+    `Tu reserva en ${business.name} quedó confirmada.`,
     "",
     `Día: ${day}`,
     `Horario: ${time}`,
@@ -49,12 +49,12 @@ export function confirmationEmail(details: ConfirmedReservationDetails): Email {
 <html lang="es">
   <body style="font-family: sans-serif; color: #1a1a1a; line-height: 1.5">
     <p>Hola, ${escapeHtml(customerName)}:</p>
-    <p>Tu Reserva en <strong>${escapeHtml(business.name)}</strong> quedó confirmada.</p>
+    <p>Tu reserva en <strong>${escapeHtml(business.name)}</strong> quedó confirmada.</p>
     <p>
       <strong>Día:</strong> ${escapeHtml(day)}<br />
       <strong>Horario:</strong> ${escapeHtml(time)}
     </p>
-    <p>Si no podés ir, <a href="${escapeHtml(link)}">cancelá tu Reserva desde este link</a>.</p>
+    <p>Si no podés ir, <a href="${escapeHtml(link)}">cancelá tu reserva desde este link</a>.</p>
   </body>
 </html>`;
 
@@ -89,8 +89,8 @@ export function cancellationEmail(details: CancelledReservationDetails): Email {
     `Hola, ${customerName}:`,
     "",
     byTheBusiness
-      ? `${business.name} canceló tu Reserva.`
-      : `Tu Reserva en ${business.name} quedó cancelada.`,
+      ? `${business.name} canceló tu reserva.`
+      : `Tu reserva en ${business.name} quedó cancelada.`,
     "",
     `Día: ${day}`,
     `Horario: ${time}`,
@@ -105,8 +105,8 @@ export function cancellationEmail(details: CancelledReservationDetails): Email {
     <p>Hola, ${escapeHtml(customerName)}:</p>
     <p>${
       byTheBusiness
-        ? `<strong>${escapeHtml(business.name)}</strong> canceló tu Reserva.`
-        : `Tu Reserva en <strong>${escapeHtml(business.name)}</strong> quedó cancelada.`
+        ? `<strong>${escapeHtml(business.name)}</strong> canceló tu reserva.`
+        : `Tu reserva en <strong>${escapeHtml(business.name)}</strong> quedó cancelada.`
     }</p>
     <p>
       <strong>Día:</strong> ${escapeHtml(day)}<br />

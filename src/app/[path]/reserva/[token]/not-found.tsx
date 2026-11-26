@@ -1,16 +1,9 @@
-import styles from "../../public-page.module.scss";
+import { ReservationNotFound } from "./reservation-not-found";
 
-/** Shown for a Cancellation link whose token does not exist, or belongs to another Business. */
-export default function ReservationNotFound() {
-  return (
-    <main className={styles.page}>
-      <section className={styles.card}>
-        <h1>Reserva no encontrada</h1>
-        <p className={styles.muted}>
-          No encontramos ninguna Reserva con este link. Revisá que sea el mismo que te llegó por
-          email.
-        </p>
-      </section>
-    </main>
-  );
+/**
+ * A Cancellation link of a Business that does not exist. When the Business exists, the
+ * page itself shows the same screen, with the way to its public page.
+ */
+export default function ReservationLinkNotFound() {
+  return <ReservationNotFound />;
 }

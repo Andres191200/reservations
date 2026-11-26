@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { getAvailableSlots } from "@/core/available-slots";
-import { getReservationRules } from "@/core/business-configuration";
+import { getReservableDaysOverview } from "@/core/available-slots";
 import { capitalize, formatDay, formatHours } from "@/core/format";
 import { dayInTimeZone, TIME_ZONE_LABEL } from "@/core/time-zone";
 import { findBusinessByPath } from "@/db/businesses";
 import { env } from "@/lib/env";
 import { dayHref, SLOT_PARAM } from "../format";
+import { unavailableSlotNotice } from "../messages";
 import styles from "../public-page.module.scss";
 import { ReservationForm } from "./reservation-form";
 
@@ -41,11 +41,17 @@ async function Reserve({ params, searchParams }: PageProps<"/[path]/reservar">) 
 
   // Shows the form only for a block that is still an Available slot. The core checks it
   // again when reserving, since it can fill up while the Customer types.
-  const [slots, rules] = await Promise.all([
-    day ? getAvailableSlots(business.id, day, new Date()) : [],
-    getReservationRules(business.id),
-  ]);
-  const slot = slots.find((available) => available.startsAt.getTime() === startsAt!.getTime());
+  const overview = await getReservableDaysOverview(business.id, new Date());
+  const { first, last } = overview.reservableDays;
+  const inRange = day !== undefined && day >= first && day <= last;
+  const slot = inRange
+    ? overview
+        .availabilityOn(day)
+        .slots.find((available) => available.startsAt.getTime() === startsAt!.getTime())
+    : undefined;
+  // Otherwise, the way out: the day of the block if it still has Available slots, or else
+  // the next one that has.
+  const nextDay = (inRange && overview.firstDayWithSlots(day)) || overview.firstDayWithSlots();
 
   return (
     <>
@@ -79,20 +85,34 @@ async function Reserve({ params, searchParams }: PageProps<"/[path]/reservar">) 
             path={path}
             startsAt={slot.startsAt.toISOString()}
             backHref={dayHref(path, day)}
-            cancellationNote={cancellationNote(rules.cancellationDeadlineHours)}
+            cancellationNote={cancellationNote(overview.rules.cancellationDeadlineHours)}
             // Read at runtime on the server, so the same build works with any key.
             turnstileSiteKey={env.TURNSTILE_SITE_KEY}
           />
         </>
       ) : (
-        <section className={styles.card}>
-          <p className={styles.notice}>Ese horario ya no está disponible.</p>
-          <Link className={styles.textLink} href={day ? dayHref(path, day) : `/${path}`}>
-            Elegir otro horario
-          </Link>
-        </section>
+        <UnavailableSlot
+          href={nextDay ? dayHref(path, nextDay) : `/${path}`}
+          notice={unavailableSlotNotice(business.name, day, overview)}
+        />
       )}
     </>
+  );
+}
+
+/** A block the Customer cannot reserve: why, and the way to the Available slots. */
+function UnavailableSlot(props: {
+  href: string;
+  notice: { title: string; detail?: string };
+}) {
+  return (
+    <section className={styles.notice}>
+      <p className={styles.noticeTitle}>{props.notice.title}</p>
+      {props.notice.detail && <p>{props.notice.detail}</p>}
+      <Link className={styles.nextDay} href={props.href}>
+        Ver los horarios disponibles
+      </Link>
+    </section>
   );
 }
 
