@@ -19,15 +19,55 @@
 
 .header {
   display: grid;
-  gap: $space * 0.5;
-  // Room for the theme toggle, fixed in the top right corner.
-  padding-right: $space * 5;
+  gap: $space * 2;
 
   h1 {
+    // Room for the theme toggle, fixed in the top right corner.
+    padding-right: $space * 5;
     font-size: clamp(1.5rem, 6vw, 2.25rem);
     line-height: 1.2;
     overflow-wrap: anywhere;
+    text-wrap: balance;
   }
+}
+
+// What the Business already told the system: Opening hours, Reservation duration and
+// Cancellation deadline. A label column and a value column, at any width.
+.facts {
+  display: grid;
+  // The label column is as wide as the longest label, the same for every row.
+  grid-template-columns: max-content 1fr;
+  gap: $space $space * 2;
+
+  div {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: baseline;
+  }
+
+  dt {
+    color: $color-muted;
+    font-size: 0.875rem;
+  }
+}
+
+.openingHours {
+  display: grid;
+  gap: $space * 0.5;
+  list-style: none;
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: $space;
+  }
+}
+
+.hours {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .card {
@@ -45,12 +85,41 @@
   color: $color-muted;
 }
 
+// An empty place (a day without Available slots): dashed, not a container. It always
+// says why and offers the way out.
 .notice {
-  color: $color-muted;
-  padding: $space * 2;
+  display: grid;
+  justify-items: center;
+  gap: $space;
+  padding: $space * 3 $space * 2;
   border: 1px dashed $color-border;
   border-radius: $radius;
+  color: $color-muted;
   text-align: center;
+  text-wrap: pretty;
+}
+
+.noticeTitle {
+  color: $color-text;
+  font-weight: 600;
+}
+
+.nextDay {
+  display: inline-grid;
+  place-items: center;
+  min-height: 44px;
+  margin-top: $space;
+  padding: $space $space * 2;
+  border-radius: $radius;
+  background: $color-primary;
+  color: $color-on-primary;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.timeZone {
+  color: $color-muted;
+  font-size: 0.875rem;
 }
 
 .dayPicker {
@@ -102,10 +171,14 @@
 
 .slots {
   display: grid;
-  gap: $space * 1.5;
+  gap: $space;
 
   h2 {
     font-size: 1.125rem;
+  }
+
+  .slotList {
+    margin-top: $space * 0.5;
   }
 }
 
