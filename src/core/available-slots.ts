@@ -1,4 +1,5 @@
 import type { OpenDay, ReservationRules } from "@/db/business-configuration";
+import { listClosures } from "@/db/closures";
 import { listBusyTimes, type BusyTime } from "@/db/reservations";
 import type { BusinessId } from "@/db/schema";
 import { getAbsentProfessionals } from "./absences";
@@ -8,7 +9,6 @@ import {
   getReservationDurations,
   getReservationRules,
 } from "./business-configuration";
-import { isClosed } from "./closures";
 import { getActiveProfessionals, type Professional } from "./professionals";
 import {
   addDays,
@@ -108,24 +108,150 @@ export async function getDayAvailability(
   absent: Professional[];
 }> {
   if (!isCalendarDay(day)) return { blocks: [], busyTimes: [], professionals: [], absent: [] };
+  const { blocks, busyTimes, professionals, absent } = dayOf(
+    await loadAvailability(businessId, day, day),
+    day,
+    now,
+  );
+  return { blocks, busyTimes, professionals, absent };
+}
 
-  const [closed, openingHours, rules, durations, active, absentOn, busyTimes] = await Promise.all([
-    isClosed(businessId, day),
-    getOpeningHours(businessId),
-    getReservationRules(businessId),
-    getReservationDurations(businessId),
-    getActiveProfessionals(businessId),
-    getAbsentProfessionals(businessId, day),
-    listBusyTimes(
-      businessId,
-      instantInTimeZone(day, "00:00"),
-      instantInTimeZone(addDays(day, 1), "00:00"),
-    ),
-  ]);
+// --- The Reservable days at once (public page) --------------------------------------
+
+/**
+ * Why a Reservable day has no Available slots, as the Customer is told:
+ * - `weekdayClosed`: the Opening hours do not include that weekday;
+ * - `closure`: there is a Closure that day;
+ * - `noneLeft`: anything else (every block reserved or already started, Absences, no
+ *   active Professionals).
+ */
+export type EmptyDayReason = "weekdayClosed" | "closure" | "noneLeft";
+
+/** A Reservable day as the public page shows it. */
+export type DayAvailabilityOverview = {
+  slots: AvailableSlot[];
+  /** Only when `slots` is empty. */
+  emptyReason?: EmptyDayReason;
+  /** The Reservation duration in effect that day. */
+  durationMinutes: number;
+};
+
+/** Every Reservable day of a Business, read from the database once. */
+export type ReservableDaysOverview = {
+  reservableDays: ReservableDays;
+  openingHours: OpenDay[];
+  rules: ReservationRules;
+  /** The Available slots of a Reservable day, or why it has none. */
+  availabilityOn(day: CalendarDay): DayAvailabilityOverview;
+  /**
+   * The first Reservable day, from `from` on (by default, today), with at least one
+   * Available slot; none if no day up to the Maximum notice has one.
+   */
+  firstDayWithSlots(from?: CalendarDay): CalendarDay | undefined;
+};
+
+/**
+ * The Available slots of every Reservable day (today up to the Maximum notice), computed
+ * like `getAvailableSlots` but with one query per kind of data for the whole range,
+ * instead of one round of queries per day. Days are computed only when asked for.
+ */
+export async function getReservableDaysOverview(
+  businessId: BusinessId,
+  now: Date,
+): Promise<ReservableDaysOverview> {
+  const rules = await getReservationRules(businessId);
+  const reservableDays = getReservableDays(rules, now);
+  const availability = await loadAvailability(
+    businessId,
+    reservableDays.first,
+    reservableDays.last,
+  );
+
+  const computed = new Map<CalendarDay, DayAvailabilityOverview>();
+  function availabilityOn(day: CalendarDay): DayAvailabilityOverview {
+    const cached = computed.get(day);
+    if (cached) return cached;
+    const { blocks, closed } = dayOf(availability, day, now);
+    const slots = blocks
+      .filter((block) => block.freeProfessionals.length > 0)
+      .map(({ startsAt, time }) => ({ startsAt, time }));
+    const result: DayAvailabilityOverview = {
+      slots,
+      durationMinutes: durationOn(availability.durations, day),
+      ...(slots.length === 0 && { emptyReason: emptyReason(availability, day, closed) }),
+    };
+    computed.set(day, result);
+    return result;
+  }
+
+  return {
+    reservableDays,
+    openingHours: availability.openingHours,
+    rules: availability.rules,
+    availabilityOn,
+    firstDayWithSlots(from = reservableDays.first) {
+      for (
+        let day = from < reservableDays.first ? reservableDays.first : from;
+        day <= reservableDays.last;
+        day = addDays(day, 1)
+      ) {
+        if (availabilityOn(day).slots.length > 0) return day;
+      }
+      return undefined;
+    },
+  };
+}
+
+function emptyReason(
+  availability: Availability,
+  day: CalendarDay,
+  closed: boolean,
+): EmptyDayReason {
+  if (!availability.openingHours.some((open) => open.weekday === weekdayOf(day))) {
+    return "weekdayClosed";
+  }
+  return closed ? "closure" : "noneLeft";
+}
+
+// --- Reading and computing -----------------------------------------------------------
+
+/** What the Available slots of the days from `fromDay` to `toDay` depend on. */
+type Availability = Awaited<ReturnType<typeof loadAvailability>>;
+
+async function loadAvailability(businessId: BusinessId, fromDay: CalendarDay, toDay: CalendarDay) {
+  const [closures, openingHours, rules, durations, active, absentOn, busyTimes] =
+    await Promise.all([
+      listClosures(businessId, fromDay),
+      getOpeningHours(businessId),
+      getReservationRules(businessId),
+      getReservationDurations(businessId),
+      getActiveProfessionals(businessId),
+      getAbsentProfessionals(businessId, fromDay, toDay),
+      listBusyTimes(
+        businessId,
+        instantInTimeZone(fromDay, "00:00"),
+        instantInTimeZone(addDays(toDay, 1), "00:00"),
+      ),
+    ]);
+  const closedDays = new Set(
+    closures.map((closure) => closure.day).filter((day) => day <= toDay),
+  );
+  return { closedDays, openingHours, rules, durations, active, absentOn, busyTimes };
+}
+
+/** The blocks of one day, from what `loadAvailability` read for a range that includes it. */
+function dayOf(availability: Availability, day: CalendarDay, now: Date) {
+  const { closedDays, openingHours, rules, durations, active, absentOn } = availability;
+  const dayStarts = instantInTimeZone(day, "00:00");
+  const dayEnds = instantInTimeZone(addDays(day, 1), "00:00");
+  const busyTimes = availability.busyTimes.filter(
+    (busy) => busy.startsAt < dayEnds && busy.endsAt > dayStarts,
+  );
   // An Absent Professional takes one Reservation less from each block (ADR 0001).
   const absentIds = absentOn(day);
   const professionals = active.filter((professional) => !absentIds.has(professional.id));
   const absent = active.filter((professional) => absentIds.has(professional.id));
+  const closed = closedDays.has(day);
   const blocks = closed
     ? []
     : computeBlocks({
@@ -137,7 +263,7 @@ export async function getDayAvailability(
         professionals,
         busyTimes,
       });
-  return { blocks, busyTimes, professionals, absent };
+  return { blocks, busyTimes, professionals, absent, closed };
 }
 
 /** The calculation itself, without reading the database. */
