@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getAvailableSlots } from "@/core/available-slots";
-import { capitalize, formatDay } from "@/core/format";
+import { getReservationRules } from "@/core/business-configuration";
+import { capitalize, formatDay, formatHours } from "@/core/format";
 import { dayInTimeZone, TIME_ZONE_LABEL } from "@/core/time-zone";
 import { findBusinessByPath } from "@/db/businesses";
 import { env } from "@/lib/env";
@@ -40,37 +41,64 @@ async function Reserve({ params, searchParams }: PageProps<"/[path]/reservar">) 
 
   // Shows the form only for a block that is still an Available slot. The core checks it
   // again when reserving, since it can fill up while the Customer types.
-  const slot = day
-    ? (await getAvailableSlots(business.id, day, new Date())).find(
-        (available) => available.startsAt.getTime() === startsAt!.getTime(),
-      )
-    : undefined;
+  const [slots, rules] = await Promise.all([
+    day ? getAvailableSlots(business.id, day, new Date()) : [],
+    getReservationRules(business.id),
+  ]);
+  const slot = slots.find((available) => available.startsAt.getTime() === startsAt!.getTime());
 
   return (
     <>
       <header className={styles.header}>
         <h1>{business.name}</h1>
-        {slot && day && (
-          <p className={styles.muted}>
-            {capitalize(formatDay(day))}, {slot.time} ({TIME_ZONE_LABEL}).
-          </p>
-        )}
       </header>
 
       {slot && day ? (
-        <ReservationForm
-          path={path}
-          startsAt={slot.startsAt.toISOString()}
-          backHref={dayHref(path, day)}
-          // Read at runtime on the server, so the same build works with any key.
-          turnstileSiteKey={env.TURNSTILE_SITE_KEY}
-        />
+        <>
+          {/* What the Customer is about to reserve, and the way back to choose again. */}
+          <div className={styles.chosenSlot}>
+            <p>
+              <span className={styles.chosenWhen}>
+                {capitalize(formatDay(day))} ·{" "}
+                <time className={styles.hours} dateTime={slot.startsAt.toISOString()}>
+                  {slot.time}
+                </time>
+              </span>{" "}
+              <span className={styles.chosenZone}>({TIME_ZONE_LABEL})</span>
+            </p>
+            <Link
+              href={dayHref(path, day)}
+              className={styles.changeLink}
+              aria-label="Cambiar el día o el horario"
+            >
+              Cambiar
+            </Link>
+          </div>
+
+          <ReservationForm
+            path={path}
+            startsAt={slot.startsAt.toISOString()}
+            backHref={dayHref(path, day)}
+            cancellationNote={cancellationNote(rules.cancellationDeadlineHours)}
+            // Read at runtime on the server, so the same build works with any key.
+            turnstileSiteKey={env.TURNSTILE_SITE_KEY}
+          />
+        </>
       ) : (
         <section className={styles.card}>
           <p className={styles.notice}>Ese horario ya no está disponible.</p>
-          <Link href={day ? dayHref(path, day) : `/${path}`}>Elegir otro horario</Link>
+          <Link className={styles.textLink} href={day ? dayHref(path, day) : `/${path}`}>
+            Elegir otro horario
+          </Link>
         </section>
       )}
     </>
   );
+}
+
+/** The Cancellation deadline, said before reserving: "Podés cancelarla hasta 2 horas antes." */
+function cancellationNote(deadlineHours: number): string {
+  return deadlineHours === 0
+    ? "Podés cancelarla hasta que empiece."
+    : `Podés cancelarla hasta ${formatHours(deadlineHours)} antes.`;
 }

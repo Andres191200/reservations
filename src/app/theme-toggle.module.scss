@@ -22,8 +22,11 @@
   }
 }
 
-// On the public pages, which have no top bar: fixed in the top right corner.
+// On the public pages, which have no top bar: fixed in the top right corner, with the
+// 44px touch target of those pages.
 .floating {
+  width: 44px;
+  height: 44px;
   position: fixed;
   top: $space * 1.5;
   right: $space * 1.5;

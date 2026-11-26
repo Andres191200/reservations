@@ -28,14 +28,21 @@ declare global {
 }
 
 export type TurnstileHandle = {
-  /** Asks for a new token. A token works only once, so after every submission. */
+  /**
+   * Asks for a new token: a token works only once, so after every submission, and again
+   * after a failure. The wait for it starts over.
+   */
   reset(): void;
 };
+
+/** Without a token by then, Turnstile counts as not responding (blocked, no network). */
+export const TOKEN_TIMEOUT_MS = 12_000;
 
 /**
  * Cloudflare Turnstile's invisible captcha. It checks the browser in the background and
  * hands a token to `onToken` (`null` while there is none, or if it expired), which the
- * form sends for the server to verify.
+ * form sends for the server to verify. If Turnstile fails, or gives no token within
+ * `TOKEN_TIMEOUT_MS`, it calls `onError`.
  */
 export function Turnstile({
   ref,
@@ -43,7 +50,7 @@ export function Turnstile({
 }: {
   siteKey: string;
   onToken: (token: string | null) => void;
-  /** Turnstile could not check the browser (blocked script, network). */
+  /** Turnstile could not check the browser (blocked script, network, no answer). */
   onError: () => void;
   ref?: Ref<TurnstileHandle>;
 }) {
@@ -55,21 +62,36 @@ export function Turnstile({
     callbacks.current = props;
   });
 
+  // The wait for a token: from the start, and again after each reset.
+  const timeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  function waitForToken() {
+    clearTimeout(timeout.current);
+    timeout.current = setTimeout(() => callbacks.current.onError(), TOKEN_TIMEOUT_MS);
+  }
+  function onToken(token: string | null) {
+    if (token) clearTimeout(timeout.current);
+    callbacks.current.onToken(token);
+  }
+
   useImperativeHandle(ref, () => ({
     reset() {
-      if (widgetId.current === undefined || !window.turnstile) return;
+      waitForToken();
       callbacks.current.onToken(null);
-      window.turnstile.reset(widgetId.current);
+      // If the widget never rendered (the script came late), this is another chance.
+      if (widgetId.current === undefined) renderWidget();
+      else window.turnstile?.reset(widgetId.current);
     },
   }));
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    waitForToken();
+    return () => {
+      clearTimeout(timeout.current);
       if (widgetId.current !== undefined) window.turnstile?.remove(widgetId.current);
       widgetId.current = undefined;
-    },
-    [],
-  );
+    };
+    // Only on mount: the wait starts with the page.
+  }, []);
 
   function renderWidget() {
     if (!containerRef.current || !window.turnstile || widgetId.current !== undefined) return;
@@ -79,8 +101,12 @@ export function Turnstile({
       theme: "auto",
       // The form sends the token in its own hidden field.
       "response-field": false,
-      callback: (token) => callbacks.current.onToken(token),
-      "expired-callback": () => callbacks.current.onToken(null),
+      callback: (token) => onToken(token),
+      // Turnstile asks for a new one by itself: the wait starts over.
+      "expired-callback": () => {
+        waitForToken();
+        onToken(null);
+      },
       "error-callback": () => callbacks.current.onError(),
     });
   }

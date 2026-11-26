@@ -25,6 +25,7 @@ import {
 import { findBusinessByPath } from "@/db/businesses";
 import { DayPicker } from "./day-picker";
 import { DAY_PARAM, dayHref, reserveHref } from "./format";
+import { LinkPending } from "./link-pending";
 import styles from "./public-page.module.scss";
 
 /** From this many Available slots on, the day navigation is repeated below the list. */
@@ -180,6 +181,7 @@ function DayAvailability({
                     aria-label={`Reservar a las ${slot.time}`}
                   >
                     <time dateTime={slot.startsAt.toISOString()}>{slot.time}</time>
+                    <LinkPending />
                   </Link>
                 </li>
               ))}

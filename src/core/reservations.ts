@@ -8,7 +8,7 @@ import { sendWithoutFailing, type EmailSender } from "./email";
 import { professionalAbsentError } from "./absences";
 import { PROFESSIONAL_NOT_FOUND_ERROR, type Professional } from "./professionals";
 import { confirmationEmail, type ConfirmedReservationDetails } from "./reservation-emails";
-import type { Result } from "./result";
+import type { FieldErrors, Result } from "./result";
 import { dayInTimeZone } from "./time-zone";
 
 export type Reservation = StoredReservation;
@@ -100,7 +100,7 @@ export async function reserve(
   emailSender: EmailSender,
 ): Promise<Result<Reservation>> {
   const parsed = newReservationSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: issuesOf(parsed.error) };
+  if (!parsed.success) return rejected(parsed.error);
   const { startsAt, ...customer } = parsed.data;
 
   return createReservation(
@@ -127,7 +127,7 @@ export async function reserveByAdmin(
   emailSender: EmailSender,
 ): Promise<Result<Reservation>> {
   const parsed = newAdminReservationSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: issuesOf(parsed.error) };
+  if (!parsed.success) return rejected(parsed.error);
   const { startsAt, professionalId, ...customer } = parsed.data;
 
   return createReservation(
@@ -213,8 +213,14 @@ async function createReservation(
   return { ok: false, error: takenError };
 }
 
-function issuesOf(error: z.ZodError): string {
-  return error.issues.map((issue) => issue.message).join("\n");
+/** Every message, and the first one of each field. */
+function rejected(error: z.ZodError): { ok: false; error: string; fieldErrors: FieldErrors } {
+  const fieldErrors: FieldErrors = {};
+  for (const issue of error.issues) {
+    const [field] = issue.path;
+    if (typeof field === "string") fieldErrors[field] ??= issue.message;
+  }
+  return { ok: false, error: error.issues.map((issue) => issue.message).join("\n"), fieldErrors };
 }
 
 /**

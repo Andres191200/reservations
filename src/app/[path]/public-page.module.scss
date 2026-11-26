@@ -23,7 +23,7 @@
 
   h1 {
     // Room for the theme toggle, fixed in the top right corner.
-    padding-right: $space * 5;
+    padding-right: $space * 6;
     font-size: clamp(1.5rem, 6vw, 2.25rem);
     line-height: 1.2;
     overflow-wrap: anywhere;
@@ -144,6 +144,97 @@
     font: inherit;
     // 16px or more keeps iOS from zooming into the field.
     font-size: max(1rem, 16px);
+
+    &[aria-invalid="true"] {
+      border-color: $color-danger;
+    }
+  }
+}
+
+// Below a field and read with it: why it is asked for, or what to fix.
+.hint,
+.fieldError {
+  font-size: 0.875rem;
+  text-wrap: pretty;
+}
+
+.hint {
+  color: $color-muted;
+}
+
+.fieldError {
+  color: $color-danger;
+}
+
+// The chosen Available slot, above the form: a selection, so the primary color's tint.
+.chosenSlot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 $space * 2;
+  padding: $space $space * 2;
+  border: 1px solid tint($color-primary, 40%);
+  border-radius: $radius;
+  background: tint($color-primary, 8%);
+
+  @include up(sm) {
+    padding-inline: $space * 3;
+  }
+
+  p {
+    flex: 1 1 220px;
+    padding-block: $space * 0.5;
+    text-wrap: pretty;
+  }
+}
+
+.chosenWhen {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+// "(hora de Argentina)" goes to the next line whole, never split.
+.chosenZone {
+  color: $color-muted;
+  white-space: nowrap;
+}
+
+// Its touch target grows past the text without moving it: on the row's edge, or aligned
+// with the date when it goes to its own line.
+.changeLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-inline: -$space * 1.5;
+  padding-inline: $space * 1.5;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+// A link on its own line: as tall as a touch target.
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  min-height: 44px;
+}
+
+// Above and below the button: the Cancellation deadline, and what the form is doing.
+.submit {
+  display: grid;
+  gap: $space;
+  margin-top: $space * 0.5;
+}
+
+.note {
+  color: $color-muted;
+  font-size: 0.875rem;
+  text-wrap: pretty;
+
+  // The status line is always there for screen readers; empty, it takes no room.
+  &:empty {
+    margin-top: -$space;
   }
 }
 
@@ -164,7 +255,9 @@
   gap: $space * 2;
 
   a {
-    padding: $space 0;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
     text-decoration: none;
   }
 }
@@ -205,6 +298,31 @@
       border-color: $color-primary;
       color: $color-primary;
     }
+
+    // Touched, and while the reservation form loads (LinkPending): chosen, as in the
+    // panel's radios, with a slow pulse that says it is on its way.
+    &:active,
+    &:has([data-pending]) {
+      border-color: $color-primary;
+      background: tint($color-primary, 15%);
+      color: $color-primary;
+    }
+
+    &:has([data-pending]) {
+      animation: pending 1s ease-in-out infinite alternate;
+    }
+  }
+}
+
+@keyframes pending {
+  to {
+    background: tint($color-primary, 30%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slotList a:has([data-pending]) {
+    animation: none;
   }
 }
 

@@ -201,8 +201,29 @@ describe("Customer data", () => {
   ])("rejects %s", async (_case, overrides, error) => {
     const { businessId } = await setUpBusiness();
 
-    expect(await reserveAt(businessId, AT_0900, overrides)).toEqual({ ok: false, error });
+    // The message also says which field it is about, so the form shows it beside that field.
+    const [field] = Object.keys(overrides);
+    expect(await reserveAt(businessId, AT_0900, overrides)).toEqual({
+      ok: false,
+      error,
+      fieldErrors: { [field]: error },
+    });
     expect(await confirmedReservations(businessId)).toEqual([]);
+  });
+
+  it("with several fields wrong, says each one beside its field", async () => {
+    const { businessId } = await setUpBusiness();
+
+    const result = await reserveAt(businessId, AT_0900, {
+      customerName: "",
+      customerEmail: "ana@",
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Completá tu nombre.\nEl email no es válido.",
+      fieldErrors: { customerName: "Completá tu nombre.", customerEmail: "El email no es válido." },
+    });
   });
 
   it("does not require a phone", async () => {
@@ -223,7 +244,7 @@ describe("A block that cannot be reserved, even if the form is forced", () => {
   ])("rejects a Reservation %s", async (_case, startsAt) => {
     const { businessId } = await setUpBusiness();
 
-    expect(await reserveAt(businessId, startsAt)).toEqual({
+    expect(await reserveAt(businessId, startsAt)).toMatchObject({
       ok: false,
       error: SLOT_NOT_RESERVABLE_ERROR,
     });
@@ -514,7 +535,12 @@ describe("The Admin enters a Reservation", () => {
   ])("rejects %s", async (_case, overrides, error) => {
     const { businessId } = await setUpBusiness();
 
-    expect(await reserveByAdminAt(businessId, AT_0900, overrides)).toEqual({ ok: false, error });
+    const [field] = Object.keys(overrides);
+    expect(await reserveByAdminAt(businessId, AT_0900, overrides)).toEqual({
+      ok: false,
+      error,
+      fieldErrors: { [field]: error },
+    });
     expect(await confirmedReservations(businessId)).toEqual([]);
   });
 });
