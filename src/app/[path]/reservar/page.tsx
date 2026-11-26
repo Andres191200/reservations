@@ -61,9 +61,7 @@ async function Reserve({ params, searchParams }: PageProps<"/[path]/reservar">) 
         <ReservationForm
           path={path}
           startsAt={slot.startsAt.toISOString()}
-          businessName={business.name}
           backHref={dayHref(path, day)}
-          timeZoneLabel={TIME_ZONE_LABEL}
           // Read at runtime on the server, so the same build works with any key.
           turnstileSiteKey={env.TURNSTILE_SITE_KEY}
         />

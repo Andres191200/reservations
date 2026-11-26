@@ -6,8 +6,10 @@ import { getReservationForCustomer } from "@/core/cancellations";
 import { capitalize, formatDay, RESERVATION_STATUS_LABEL } from "@/core/format";
 import { dayInTimeZone, TIME_ZONE_LABEL, timeInTimeZone } from "@/core/time-zone";
 import { findBusinessByPath } from "@/db/businesses";
+import { JUST_CREATED_PARAM } from "../../format";
 import styles from "../../public-page.module.scss";
 import { CancelReservation } from "./cancel-reservation";
+import { JustCreatedNotice } from "./just-created-notice";
 
 export async function generateMetadata({
   params,
@@ -23,22 +25,24 @@ export async function generateMetadata({
 
 /**
  * Page of the Cancellation link: the Customer sees their Reservation and, while the
- * Cancellation deadline allows it, cancels it. No account: the token is the key.
+ * Cancellation deadline allows it, cancels it. No account: the token is the key. It is
+ * also where reserving from the public page ends, greeting the Customer once.
  */
-export default function ReservationPage({ params }: PageProps<"/[path]/reserva/[token]">) {
+export default function ReservationPage({
+  params,
+  searchParams,
+}: PageProps<"/[path]/reserva/[token]">) {
   return (
     <main className={styles.page}>
       <Suspense fallback={<p className={styles.muted}>Cargando…</p>}>
-        <CustomerReservation params={params} />
+        <CustomerReservation params={params} searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-async function CustomerReservation({
-  params,
-}: Pick<PageProps<"/[path]/reserva/[token]">, "params">) {
-  const { path, token } = await params;
+async function CustomerReservation({ params, searchParams }: PageProps<"/[path]/reserva/[token]">) {
+  const [{ path, token }, query] = await Promise.all([params, searchParams]);
   const business = await findBusinessByPath(path);
   if (!business) notFound();
 
@@ -46,7 +50,13 @@ async function CustomerReservation({
   const reservation = await getReservationForCustomer(business.id, token, now);
   if (!reservation) notFound();
 
-  const { startsAt, status } = reservation;
+  const { startsAt, status, customerEmail, cancellableUntil } = reservation;
+  // Only the Customer reserves from the public page, always with an email; a Cancelled
+  // Reservation has nothing to celebrate.
+  const justCreated =
+    query[JUST_CREATED_PARAM] !== undefined && status === "confirmed" && customerEmail !== null;
+  const cancellableUntilDay = formatDay(dayInTimeZone(cancellableUntil));
+  const cancellableUntilTime = timeInTimeZone(cancellableUntil);
 
   return (
     <>
@@ -54,6 +64,22 @@ async function CustomerReservation({
         <p className={styles.muted}>Tu Reserva en</p>
         <h1>{business.name}</h1>
       </header>
+
+      {justCreated && (
+        <JustCreatedNotice
+          path={path}
+          customerEmail={customerEmail}
+          cancellableUntil={
+            reservation.cancellableByCustomer
+              ? {
+                  day: cancellableUntilDay,
+                  time: cancellableUntilTime,
+                  timeZoneLabel: TIME_ZONE_LABEL,
+                }
+              : undefined
+          }
+        />
+      )}
 
       <section className={styles.card}>
         <dl className={styles.details}>
@@ -70,8 +96,11 @@ async function CustomerReservation({
           <div>
             <dt>Estado</dt>
             <dd>
-              <span className={status === "cancelled" ? styles.cancelled : styles.confirmed}>
-                {RESERVATION_STATUS_LABEL[status]}
+              {/* Stays on the page when the status changes, so the change is announced. */}
+              <span role="status">
+                <span className={status === "cancelled" ? styles.cancelled : styles.confirmed}>
+                  {RESERVATION_STATUS_LABEL[status]}
+                </span>
               </span>
             </dd>
           </div>
@@ -90,7 +119,12 @@ async function CustomerReservation({
           <CancelReservation
             path={path}
             token={token}
-            cancellableUntil={`${formatDay(dayInTimeZone(reservation.cancellableUntil))} a las ${timeInTimeZone(reservation.cancellableUntil)} (${TIME_ZONE_LABEL})`}
+            // The greeting already says until when, a few lines above.
+            cancellableUntil={
+              justCreated
+                ? undefined
+                : `${cancellableUntilDay} a las ${cancellableUntilTime} (${TIME_ZONE_LABEL})`
+            }
           />
         ) : startsAt <= now ? (
           <p className={styles.notice}>Esta Reserva ya pasó.</p>

@@ -9,16 +9,14 @@ import { Turnstile, type TurnstileHandle } from "./turnstile";
 
 /**
  * The Customer's contact data for the chosen block. Once the Reservation is Confirmed,
- * the form gives way to the confirmation screen. Turnstile's invisible captcha checks the
+ * the action takes the Customer to its page. Turnstile's invisible captcha checks the
  * browser in the background; the form can be sent once it has a token.
  */
 export function ReservationForm(props: {
   path: string;
   startsAt: string;
-  businessName: string;
   /** The public page on the day of the block, to choose another one. */
   backHref: string;
-  timeZoneLabel: string;
   turnstileSiteKey: string;
 }) {
   const turnstile = useRef<TurnstileHandle>(null);
@@ -33,20 +31,6 @@ export function ReservationForm(props: {
     },
     {},
   );
-
-  if (state.confirmed) {
-    return (
-      <section className={styles.card} aria-live="polite">
-        <h2>¡Reserva confirmada!</h2>
-        <p>
-          Te esperamos en <strong>{props.businessName}</strong> el{" "}
-          <strong>{state.confirmed.day.toLowerCase()}</strong> a las{" "}
-          <strong>{state.confirmed.time}</strong> ({props.timeZoneLabel}).
-        </p>
-        <Link href={props.backHref}>Volver a los Horarios disponibles</Link>
-      </section>
-    );
-  }
 
   return (
     <form action={action} className={styles.card}>

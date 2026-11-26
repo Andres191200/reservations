@@ -1,9 +1,8 @@
 "use server";
 
 import { headers } from "next/headers";
-import { capitalize, formatDay } from "@/core/format";
+import { redirect, RedirectType } from "next/navigation";
 import { reserve, SLOT_TAKEN_ERROR } from "@/core/reservations";
-import { dayInTimeZone, timeInTimeZone } from "@/core/time-zone";
 import { findBusinessByPath } from "@/db/businesses";
 import { withUnexpectedErrors } from "@/lib/action-errors";
 import { clientIp } from "@/lib/client-ip";
@@ -11,6 +10,7 @@ import { emailSender } from "@/lib/email-sender";
 import { createRateLimiter } from "@/lib/rate-limiter";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { TURNSTILE_FAILED_ERROR, TURNSTILE_TOKEN_FIELD } from "@/lib/turnstile-form";
+import { reservationHref } from "../format";
 
 const RESERVATIONS_PER_HOUR = 10;
 const HOUR_MS = 60 * 60 * 1000;
@@ -33,8 +33,6 @@ export type ReserveState = {
   /** The block filled up meanwhile: the Customer has to choose another one. */
   slotTaken?: boolean;
   fields?: CustomerFields;
-  /** The Confirmed Reservation, as the confirmation screen shows it. */
-  confirmed?: { day: string; time: string };
 };
 
 /**
@@ -44,6 +42,10 @@ export type ReserveState = {
  * Before calling the core, the public page's protections: Turnstile's token must be
  * valid, and the IP must not have reached the hourly limit of Reservations. Only created
  * Reservations count toward the limit: a rejected one gives its place back.
+ *
+ * A created Reservation ends on its own page (the one of the Cancellation link), marked as
+ * just created so it greets the Customer once. It replaces the form in the history: going
+ * back leads to the day, not to a form already sent.
  */
 export async function reserveSlot(
   path: string,
@@ -93,13 +95,10 @@ export async function reserveSlot(
       return { error: result.error, slotTaken: result.error === SLOT_TAKEN_ERROR, fields };
     }
 
-    const reservedAt = result.value.startsAt;
-    return {
-      confirmed: {
-        day: capitalize(formatDay(dayInTimeZone(reservedAt))),
-        time: timeInTimeZone(reservedAt),
-      },
-    };
+    redirect(
+      reservationHref(path, result.value.cancellationToken, { justCreated: true }),
+      RedirectType.replace,
+    );
   }, { fields });
 }
 

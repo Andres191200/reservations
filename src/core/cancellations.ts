@@ -31,6 +31,8 @@ export type ReservationForCustomer = {
   startsAt: Date;
   endsAt: Date;
   status: ReservationStatus;
+  /** Where the confirmation email went. Only a Reservation the Admin entered can lack it. */
+  customerEmail: string | null;
   /** Who made the Cancellation, once it is Cancelled. */
   cancelledBy: CancelledBy | null;
   /** Last instant the Customer can cancel it on their own (the Cancellation deadline). */
@@ -158,6 +160,7 @@ function forCustomer(
     startsAt: reservation.startsAt,
     endsAt: reservation.endsAt,
     status: reservation.status,
+    customerEmail: reservation.customerEmail,
     cancelledBy: reservation.cancelledBy,
     cancellableUntil,
     cancellableByCustomer:

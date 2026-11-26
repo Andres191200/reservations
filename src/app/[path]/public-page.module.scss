@@ -270,6 +270,41 @@
   color: $color-danger;
 }
 
+// A Reservation just created (JustCreatedNotice): a success state, said with text and
+// with the success color only as a tint, beside the card and not inside it.
+.successNotice {
+  display: grid;
+  justify-items: start;
+  gap: $space;
+  padding: $space * 2;
+  border: 1px solid tint($color-success, 40%);
+  border-radius: $radius;
+  background: tint($color-success, 8%);
+  text-wrap: pretty;
+
+  @include up(sm) {
+    padding: $space * 2.5 $space * 3;
+  }
+
+  h2 {
+    font-size: 1.125rem;
+
+    // It takes the focus only so a screen reader announces it: it is not a control.
+    &:focus {
+      outline: none;
+    }
+  }
+
+  a {
+    margin-top: $space * 0.5;
+  }
+}
+
+// An email can be one long word: it breaks anywhere rather than overflow.
+.email {
+  overflow-wrap: anywhere;
+}
+
 .cancellation,
 .confirmation {
   display: grid;
