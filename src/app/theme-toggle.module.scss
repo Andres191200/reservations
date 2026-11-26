@@ -9,8 +9,6 @@
   border-radius: $radius;
   background: $color-surface;
   color: $color-text;
-  font-size: 1.125rem;
-  line-height: 1;
   cursor: pointer;
 
   &:hover {
@@ -34,6 +32,10 @@
 }
 
 // The icon shows the theme it switches to: the sun in dark, the moon in light.
+.toLight {
+  display: block;
+}
+
 .toDark {
   display: none;
 }
@@ -44,7 +46,7 @@
   }
 
   .toDark {
-    display: inline;
+    display: block;
   }
 }
 

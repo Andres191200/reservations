@@ -49,7 +49,9 @@ export function JustCreatedNotice(props: {
         Si el email está mal, no te va a llegar: guardá esta página, que es la misma que abre el
         link del email.
       </p>
-      <Link href={`/${props.path}`}>Reservar otro horario</Link>
+      <Link className={styles.textLink} href={`/${props.path}`}>
+        Reservar otro horario
+      </Link>
     </section>
   );
 }

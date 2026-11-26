@@ -58,13 +58,28 @@ export function ThemeToggle({ floating = false }: { floating?: boolean }) {
       aria-label="Cambiar entre tema claro y oscuro"
       title="Cambiar entre tema claro y oscuro"
     >
-      {/* Both icons are rendered; the CSS shows the one of the other theme. */}
-      <span className={styles.toLight} aria-hidden="true">
-        ☀
-      </span>
-      <span className={styles.toDark} aria-hidden="true">
-        ☾
-      </span>
+      {/* Both icons are rendered; the CSS shows the one of the other theme. Drawn, not
+        the ☀ character, which some systems show as a color emoji. */}
+      <svg className={styles.toLight} {...ICON}>
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
+      </svg>
+      <svg className={styles.toDark} {...ICON}>
+        <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />
+      </svg>
     </button>
   );
 }
+
+/** Line icons in the color of the text, the size of the text of the button. */
+const ICON = {
+  viewBox: "0 0 24 24",
+  width: 20,
+  height: 20,
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.75,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  "aria-hidden": true,
+} as const;

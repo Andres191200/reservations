@@ -30,7 +30,7 @@ export function CancelReservation(props: {
 
       {confirming ? (
         <form action={action} className={styles.confirmation}>
-          <p>¿Seguro que querés cancelar tu Reserva? No se puede deshacer.</p>
+          <p>¿Seguro que querés cancelar tu reserva? No se puede deshacer.</p>
           <div className={styles.actions}>
             <button
               type="button"
@@ -53,7 +53,7 @@ export function CancelReservation(props: {
           className={styles.secondaryButton}
           onClick={() => setConfirming(true)}
         >
-          Cancelar Reserva
+          Cancelar reserva
         </button>
       )}
 

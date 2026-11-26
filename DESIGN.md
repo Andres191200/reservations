@@ -168,7 +168,7 @@ Neutros fríos de tinte azulado, con un acento de tinta y dos colores de estado.
 
 ### Hierarchy
 - **Display** (700, clamp(1.5rem, 6vw, 2.25rem), 1.2): el nombre del Negocio en la página pública. Corta palabras largas (`overflow-wrap: anywhere`) para que entre cualquier nombre.
-- **Headline** (700, 1.25rem): títulos de sección y de modal del panel; las pantallas de error usan clamp(1.25rem, 5vw, 1.75rem).
+- **Headline** (700, 1.25rem): títulos de sección y de modal del panel; las pantallas de mensaje (errores y "no encontrado") usan clamp(1.25rem, 5vw, 1.75rem).
 - **Title** (600, 1.125rem): nombre del Negocio en la barra del panel y el día elegido sobre los Horarios disponibles.
 - **Body** (400, 1rem, 1.5): todo el texto corriente. Los campos de la página pública usan como mínimo 16px para que iOS no haga zoom.
 - **Label** (400, 0.875rem): aclaraciones, badges de estado y datos de contacto.
@@ -177,6 +177,8 @@ Neutros fríos de tinte azulado, con un acento de tinta y dos colores de estado.
 ### Named Rules
 **La Regla de la Hora Tabular.** Toda hora lleva `font-variant-numeric: tabular-nums` y peso 600. Las columnas de horarios se alinean y la hora se lee antes que cualquier otro dato.
 
+**La Regla de la Última Línea.** El texto corrido usa `text-wrap: pretty` (heredado de `body`), así ninguna palabra queda sola en la última línea; los títulos usan `text-wrap: balance`. Ambos son globales, en `src/styles/globals.scss`: un componente no los repite.
+
 ## Layout
 
 Grilla base de 8px (`$space`). Todos los espacios son múltiplos o medios de esa unidad: 4, 8, 12, 16, 20, 24, 32 y 64px.
@@ -184,6 +186,7 @@ Grilla base de 8px (`$space`). Todos los espacios son múltiplos o medios de esa
 - **Página pública:** mobile first, una sola columna centrada de 560px como máximo, con 16px de margen lateral y 24px arriba (64px desde 768px). Los bloques se apilan con 24px de separación. Los Horarios disponibles van en una grilla `auto-fill` de celdas de 84px como mínimo, con 8px de separación.
 - **Panel:** barra superior a todo el ancho, separada por un borde inferior, con el nombre del Negocio y la navegación de texto. El contenido tiene 24/16px de padding (32px desde 768px) y las secciones se apilan con 24px de separación en una columna de 720px como máximo. Las listas de Reservas pasan de dos filas en el celular a una línea por Reserva desde 640px (hora de 110px, Cliente flexible, estado y acciones al final).
 - **Pantallas centradas** (login, errores): una tarjeta centrada vertical y horizontalmente (380px en el login, 560px en errores).
+- **Pantallas de mensaje de la página pública** (errores, "Negocio no encontrado", "Reserva no encontrada"): la misma tarjeta (`MessageScreen`), arriba en la columna de la página y a 64px del borde superior, para no quedar debajo del selector de tema. Sus acciones miden 44px de alto.
 - **Breakpoints:** 640px (`sm`), 768px (`md`), 1024px (`lg`, definido pero sin uso hoy). Solo se usan con `min-width`.
 - **Objetivos táctiles:** 44px de alto mínimo en la página pública. En el panel, los botones son más compactos (alrededor de 38px).
 
@@ -203,7 +206,7 @@ Un único radio, **10px** (`$radius`), en todo: tarjetas, campos, botones, Horar
 
 ### Buttons
 - **Shape:** esquinas suavemente redondeadas (10px), sin borde en los botones con relleno.
-- **Primary:** relleno Azul tinta, texto blanco, peso 600. Deshabilitado: opacidad 0.6 (en la página pública, solo mientras se envía). "Confirmar Reserva" no se deshabilita mientras el captcha no da un token: si se toca antes, una línea chica debajo dice "Verificando tu navegador…" y el formulario se envía al llegar el token.
+- **Primary:** relleno Azul tinta, texto blanco, peso 600. Deshabilitado: opacidad 0.6 (en la página pública, solo mientras se envía). "Confirmar reserva" no se deshabilita mientras el captcha no da un token: si se toca antes, una línea chica debajo dice "Verificando tu navegador…" y el formulario se envía al llegar el token.
 - **Secondary:** fondo transparente, borde de 1px y texto principal, peso normal.
 - **Danger:** relleno rojo, texto en el color de fondo, peso 600. Solo para acciones destructivas (cancelar una Reserva, dar de Baja).
 - **Link con forma de botón:** en el panel, "Nueva Reserva" es un link con el mismo aspecto que el botón principal.
@@ -234,7 +237,7 @@ Píldoras de 10px de radio con el texto en el color del estado sobre su tinte al
 - **Panel:** links de texto en el color principal, que pasan a Azul tinta en hover. El link a Reservas en conflicto va en rojo y peso 600 para que no pase inadvertido.
 - **Pestañas de Profesional (Agenda):** cápsulas con borde. La activa (`aria-current="page"`) lleva borde y texto Azul tinta sobre su tinte al 15%.
 - **Navegación de días:** links "← Día anterior / Día siguiente →" a los extremos, en Azul tinta y sin subrayado.
-- **Página pública:** sin navegación. El selector de tema flota en la esquina superior derecha (40px, fondo Superficie, borde de 1px) y muestra el ícono del tema al que cambia.
+- **Página pública:** sin navegación. El selector de tema flota en la esquina superior derecha (44px, fondo Superficie, borde de 1px) y muestra el ícono del tema al que cambia: un sol o una luna de línea (SVG de 20px, trazo 1.75, en el color del texto), nunca un carácter como ☀, que algunos sistemas muestran como emoji de color. En el panel mide 40px.
 
 ### Modal
 `<dialog>` nativo con fondo Superficie, borde de 1px, 10px de radio y 440px de ancho máximo. Lleva título Headline, contenido con 24px de padding y acciones alineadas a la derecha.
@@ -249,6 +252,7 @@ Píldoras de 10px de radio con el texto en el color del estado sobre su tinte al
 - **Do** respetar los 44px de objetivo táctil y los 16px de tamaño mínimo en los campos de la página pública.
 - **Do** usar el radio único de 10px y bordes de 1px en todo contenedor e interactivo nuevo.
 - **Do** mantener la entrada del modal (160ms) desactivable con `prefers-reduced-motion`.
+- **Do** escribir en minúscula los términos del glosario en medio de la frase en los textos que lee el Cliente ("Elegí un día y un horario disponible", "Tu reserva en…"). El glosario decide qué palabra se usa, no su mayúscula.
 
 ### Don't:
 - **Don't** darle a la página pública el aspecto de un rubro (barbería, spa, consultorio): tiene que servir para cualquier Negocio.

@@ -131,7 +131,7 @@ export function ReservationForm(props: {
             {state.slotTaken && (
               <>
                 {" "}
-                <Link href={props.backHref}>Ver otros Horarios disponibles</Link>
+                <Link href={props.backHref}>Ver otros horarios disponibles</Link>
               </>
             )}
           </p>
@@ -144,7 +144,7 @@ export function ReservationForm(props: {
             className={styles.primaryButton}
             disabled={pending || state.slotTaken}
           >
-            Confirmar Reserva
+            Confirmar reserva
           </button>
           {/* Always rendered, so screen readers announce it when it changes. */}
           <p role="status" className={styles.note}>

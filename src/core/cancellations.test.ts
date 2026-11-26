@@ -389,7 +389,7 @@ describe("Cancellation email", () => {
       subject: "Reserva cancelada en Negocio don-pepe: Miércoles 11 de noviembre, 09:00",
     });
     expect(email.text).toContain("Hola, Ana Pérez:");
-    expect(email.text).toContain("Tu Reserva en Negocio don-pepe quedó cancelada.");
+    expect(email.text).toContain("Tu reserva en Negocio don-pepe quedó cancelada.");
     expect(email.text).toContain("Día: Miércoles 11 de noviembre");
     expect(email.text).toContain("Horario: 09:00 (hora de Argentina)");
     expect(email.text).toContain("http://localhost:3000/don-pepe");
@@ -409,10 +409,10 @@ describe("Cancellation email", () => {
       to: "ana@mail.com",
       subject: "Reserva cancelada en Negocio don-pepe: Miércoles 11 de noviembre, 09:00",
     });
-    expect(email.text).toContain("Negocio don-pepe canceló tu Reserva.");
+    expect(email.text).toContain("Negocio don-pepe canceló tu reserva.");
     expect(email.text).toContain("Horario: 09:00 (hora de Argentina)");
     expect(email.text).toContain("http://localhost:3000/don-pepe");
-    expect(email.html).toContain("<strong>Negocio don-pepe</strong> canceló tu Reserva.");
+    expect(email.html).toContain("<strong>Negocio don-pepe</strong> canceló tu reserva.");
   });
 
   it("is not sent when the Admin entered the Reservation without email", async () => {

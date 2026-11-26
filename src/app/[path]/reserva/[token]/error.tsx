@@ -16,7 +16,7 @@ export default function ReservationPageError({
       <ErrorScreen
         error={error}
         retry={retry}
-        title="No pudimos cargar tu Reserva"
+        title="No pudimos cargar tu reserva"
         message="Puede ser un problema momentáneo. Probá de nuevo en un rato con el mismo link."
       />
     </main>

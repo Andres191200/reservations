@@ -27,7 +27,6 @@
     font-size: clamp(1.5rem, 6vw, 2.25rem);
     line-height: 1.2;
     overflow-wrap: anywhere;
-    text-wrap: balance;
   }
 }
 
@@ -96,7 +95,6 @@
   border-radius: $radius;
   color: $color-muted;
   text-align: center;
-  text-wrap: pretty;
 }
 
 .noticeTitle {
@@ -155,7 +153,6 @@
 .hint,
 .fieldError {
   font-size: 0.875rem;
-  text-wrap: pretty;
 }
 
 .hint {
@@ -185,7 +182,6 @@
   p {
     flex: 1 1 220px;
     padding-block: $space * 0.5;
-    text-wrap: pretty;
   }
 }
 
@@ -230,7 +226,6 @@
 .note {
   color: $color-muted;
   font-size: 0.875rem;
-  text-wrap: pretty;
 
   // The status line is always there for screen readers; empty, it takes no room.
   &:empty {
@@ -398,7 +393,6 @@
   border: 1px solid tint($color-success, 40%);
   border-radius: $radius;
   background: tint($color-success, 8%);
-  text-wrap: pretty;
 
   @include up(sm) {
     padding: $space * 2.5 $space * 3;
@@ -411,10 +405,6 @@
     &:focus {
       outline: none;
     }
-  }
-
-  a {
-    margin-top: $space * 0.5;
   }
 }
 

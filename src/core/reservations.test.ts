@@ -137,7 +137,7 @@ describe("Confirmation email", () => {
       fromName: "Negocio don-pepe",
       subject: "Reserva confirmada en Negocio don-pepe: Miércoles 11 de noviembre, 09:00",
     });
-    expect(email.text).toContain("Tu Reserva en Negocio don-pepe quedó confirmada.");
+    expect(email.text).toContain("Tu reserva en Negocio don-pepe quedó confirmada.");
     expect(email.text).toContain("Día: Miércoles 11 de noviembre");
     expect(email.text).toContain("Horario: 09:00 (hora de Argentina)");
     expect(email.text).toContain(link);

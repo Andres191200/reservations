@@ -2,30 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import {
-  getReservableDaysOverview,
-  type EmptyDayReason,
-  type ReservableDaysOverview,
-} from "@/core/available-slots";
+import { getReservableDaysOverview, type ReservableDaysOverview } from "@/core/available-slots";
 import {
   capitalize,
   formatDay,
   formatHours,
   formatMinutes,
   openingHoursLines,
-  weekdayPlural,
 } from "@/core/format";
-import {
-  addDays,
-  isCalendarDay,
-  TIME_ZONE_LABEL,
-  weekdayOf,
-  type CalendarDay,
-} from "@/core/time-zone";
+import { addDays, isCalendarDay, TIME_ZONE_LABEL, type CalendarDay } from "@/core/time-zone";
 import { findBusinessByPath } from "@/db/businesses";
 import { DayPicker } from "./day-picker";
 import { DAY_PARAM, dayHref, reserveHref } from "./format";
 import { LinkPending } from "./link-pending";
+import { emptyDayMessage } from "./messages";
 import styles from "./public-page.module.scss";
 
 /** From this many Available slots on, the day navigation is repeated below the list. */
@@ -70,7 +60,7 @@ async function BusinessAvailability({ params, searchParams }: PageProps<"/[path]
         <BusinessFacts overview={overview} day={inRange ? day : first} />
       </header>
 
-      <section className={styles.card} aria-label="Elegí un día y un Horario disponible">
+      <section className={styles.card} aria-label="Elegí un día y un horario disponible">
         <DayPicker action={`/${path}`} name={DAY_PARAM} value={day} min={first} max={last} />
 
         {inRange ? (
@@ -118,14 +108,14 @@ function BusinessFacts({ overview, day }: { overview: ReservableDaysOverview; da
         </div>
       )}
       <div>
-        <dt>Duración de Reserva</dt>
+        <dt>Duración de reserva</dt>
         <dd>{formatMinutes(overview.availabilityOn(day).durationMinutes)}</dd>
       </div>
       <div>
         <dt>Límite de cancelación</dt>
         <dd>
           {deadlineHours === 0
-            ? "Hasta que empiece la Reserva"
+            ? "Hasta que empiece la reserva"
             : `Hasta ${formatHours(deadlineHours)} antes`}
         </dd>
       </div>
@@ -167,7 +157,7 @@ function DayAvailability({
             <NextDayLink
               path={path}
               day={overview.firstDayWithSlots(addDays(day, 1)) ?? overview.firstDayWithSlots()}
-              noneText={`Por ahora no hay Horarios disponibles hasta el ${formatDay(last)}.`}
+              noneText={`Por ahora no hay horarios disponibles hasta el ${formatDay(last)}.`}
             />
           </div>
         ) : (
@@ -189,25 +179,9 @@ function DayAvailability({
           </>
         )}
       </div>
-      {slots.length >= SLOTS_FOR_BOTTOM_NAV && dayNav("Cambiar de día, debajo de los Horarios")}
+      {slots.length >= SLOTS_FOR_BOTTOM_NAV && dayNav("Cambiar de día, debajo de los horarios")}
     </>
   );
-}
-
-function emptyDayMessage(
-  reason: EmptyDayReason,
-  businessName: string,
-  day: CalendarDay,
-  today: CalendarDay,
-): string {
-  switch (reason) {
-    case "weekdayClosed":
-      return `${businessName} no atiende los ${weekdayPlural(weekdayOf(day))}.`;
-    case "closure":
-      return `${businessName} no atiende ese día.`;
-    case "noneLeft":
-      return `Ya no quedan Horarios disponibles para ${day === today ? "hoy" : "este día"}.`;
-  }
 }
 
 /** "Ver el jueves 26 de noviembre", or `noneText` when no day has Available slots. */

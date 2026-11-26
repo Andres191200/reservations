@@ -3,7 +3,7 @@
 import { useLayoutEffect } from "react";
 import "@/styles/globals.scss";
 import { ErrorScreen } from "./error-screen";
-import styles from "./error-screen.module.scss";
+import styles from "./message-screen.module.scss";
 import { THEME_STORAGE_KEY } from "./theme-toggle";
 
 /**
